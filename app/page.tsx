@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { Eye, PartyPopper, Puzzle, Search, Shuffle, Volume2 } from "lucide-react";
+import {
+  Eye,
+  PartyPopper,
+  Pencil,
+  Puzzle,
+  Search,
+  Shuffle,
+  Volume2,
+} from "lucide-react";
 import type { ComponentType } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +24,7 @@ const GAME_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   "spot-the-word": Search,
   "balloon-pop": PartyPopper,
   "flash-spell": Eye,
+  "fix-the-sentence": Pencil,
 };
 
 const COUNT_WORDS = [
