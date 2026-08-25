@@ -50,7 +50,7 @@ export function MissingLettersGame() {
   );
 }
 
-function MissingLettersWord({
+export function MissingLettersWord({
   entry,
   grade,
   isLast,
