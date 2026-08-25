@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   Cog,
   Eye,
+  LayoutGrid,
   PartyPopper,
   Pencil,
   Puzzle,
@@ -27,6 +28,7 @@ const GAME_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   "flash-spell": Eye,
   "fix-the-sentence": Pencil,
   "ending-machine": Cog,
+  "mini-crossword": LayoutGrid,
 };
 
 const COUNT_WORDS = [
