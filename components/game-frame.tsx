@@ -92,7 +92,7 @@ function ScoreBar({ round }: { round: RoundState }) {
       <div className="flex-1">
         <div className="flex items-baseline justify-between font-heading text-sm font-medium text-muted-foreground">
           <span>
-            Word {round.index + 1} of {round.words.length}
+            {round.unit ?? "Word"} {round.index + 1} of {round.words.length}
           </span>
           <span className="flex items-center gap-3">
             {round.streak >= 2 && (

@@ -21,12 +21,15 @@ interface MemoryCard {
   text: string;
 }
 
-/** Efficiency-based score: fewer flip-pairs, more stars. */
+/**
+ * Efficiency-based score: fewer tries, more stars — but finishing the board
+ * always earns at least one star.
+ */
 function scoreForAttempts(attempts: number, total: number): number {
-  if (attempts <= total + 2) return total;
-  if (attempts <= total + 5) return Math.ceil(total * 0.75);
-  if (attempts <= total + 9) return Math.ceil(total * 0.55);
-  return Math.floor(total * 0.3);
+  if (attempts <= total + 2) return total; // 3 stars
+  if (attempts <= total + 6) return Math.ceil(total * 0.75); // 2 stars
+  if (attempts <= total + 11) return Math.ceil(total * 0.6); // 1 star
+  return Math.ceil(total * 0.5); // still 1 star
 }
 
 export function MemoryMatchGame() {
@@ -69,8 +72,9 @@ export function MemoryMatchGame() {
       bestStreak: 0,
       results: entries.map(() => true),
       phase: done ? "done" : "playing",
+      unit: "Pair",
       summaryText: `You matched all ${PAIR_COUNT} pairs in ${attempts} ${
-        attempts === 1 ? "flip" : "flips"
+        attempts === 1 ? "try" : "tries"
       }!`,
     };
   }, [entries, matched, attempts]);
@@ -119,7 +123,7 @@ export function MemoryMatchGame() {
                   key={index}
                   type="button"
                   onClick={() => flip(index)}
-                  disabled={isMatched}
+                  aria-disabled={isMatched}
                   aria-label={
                     isUp
                       ? `${card.kind === "word" ? "Word" : "Clue"}: ${card.text}${
@@ -128,7 +132,7 @@ export function MemoryMatchGame() {
                       : "Hidden card"
                   }
                   className={cn(
-                    "flex min-h-20 items-center justify-center rounded-xl border-[3px] border-ink p-2 text-center transition-all sm:min-h-24",
+                    "flex min-h-28 items-center justify-center rounded-xl border-[3px] border-ink p-2 text-center transition-all sm:min-h-24",
                     !isUp &&
                       "tile-press cursor-pointer bg-primary shadow-[0_4px_0_var(--ink)]",
                     isUp && !isMatched && "wobble-in bg-sky-soft",
@@ -162,14 +166,21 @@ export function MemoryMatchGame() {
             className="font-heading mt-4 text-center text-sm font-medium text-muted-foreground"
             role="status"
           >
-            {attempts === 0
+            {attempts === 0 && faceUp.length === 0
               ? "Flip a card to start!"
-              : `${matched.size} of ${PAIR_COUNT} pairs matched · ${attempts} ${
-                  attempts === 1 ? "flip" : "flips"
-                }`}
+              : attempts === 0
+                ? "Now find its partner!"
+                : `${matched.size} of ${PAIR_COUNT} pairs matched · ${attempts} ${
+                    attempts === 1 ? "try" : "tries"
+                  }`}
           </p>
         </div>
       )}
+      {/* Persistent live region so the final match is announced before the
+          board swaps to the summary. */}
+      <p className="sr-only" role="status">
+        {round?.phase === "done" ? "All pairs matched — great job!" : ""}
+      </p>
     </GameFrame>
   );
 }

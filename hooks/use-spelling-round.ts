@@ -20,6 +20,8 @@ export interface RoundState<T extends RoundItem = RoundItem> {
   phase: "playing" | "done";
   /** Overrides the default "You spelled X of Y words right" summary line. */
   summaryText?: string;
+  /** What one round item is called in the score bar (default "Word"). */
+  unit?: string;
 }
 
 /** Shared 10-item round engine over any pool of round items. */
