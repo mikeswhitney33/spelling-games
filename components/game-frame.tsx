@@ -163,11 +163,15 @@ function RoundSummary({
           {SUMMARY_HEADLINES[stars]}
         </h2>
         <p className="mt-1 text-muted-foreground">
-          You spelled {round.score} of {round.words.length} words right
-          {round.bestStreak >= 3 && (
-            <> — best streak: {round.bestStreak} in a row</>
+          {round.summaryText ?? (
+            <>
+              You spelled {round.score} of {round.words.length} words right
+              {round.bestStreak >= 3 && (
+                <> — best streak: {round.bestStreak} in a row</>
+              )}
+              .
+            </>
           )}
-          .
         </p>
 
         {missed.length > 0 && (

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  Brain,
   Cog,
   Compass,
   Eye,
@@ -31,6 +32,7 @@ const GAME_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   "ending-machine": Cog,
   "mini-crossword": LayoutGrid,
   "word-search": Compass,
+  "memory-match": Brain,
 };
 
 const COUNT_WORDS = [

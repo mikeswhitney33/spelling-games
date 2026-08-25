@@ -18,6 +18,8 @@ export interface RoundState<T extends RoundItem = RoundItem> {
   bestStreak: number;
   results: boolean[];
   phase: "playing" | "done";
+  /** Overrides the default "You spelled X of Y words right" summary line. */
+  summaryText?: string;
 }
 
 /** Shared 10-item round engine over any pool of round items. */

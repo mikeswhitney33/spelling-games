@@ -92,6 +92,15 @@ export const GAMES: GameInfo[] = [
     skills: ["word shapes", "sharp eyes"],
   },
   {
+    slug: "memory-match",
+    title: "Memory Match",
+    tagline: "Flip and remember",
+    description:
+      "Flip two cards at a time to pair each word with what it means. Fewer flips, more stars!",
+    color: "sky",
+    skills: ["word meanings", "memory"],
+  },
+  {
     slug: "balloon-pop",
     title: "Balloon Pop",
     tagline: "Save the balloons",
