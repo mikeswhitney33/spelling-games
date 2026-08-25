@@ -41,7 +41,6 @@ export function WordSearchGame() {
   const [roundId, setRoundId] = useState(0);
   const [puzzle, setPuzzle] = useState<WordSearchPuzzle | null>(null);
   const [found, setFound] = useState<boolean[]>([]);
-  const [wrongCount, setWrongCount] = useState(0);
   const [firstTap, setFirstTap] = useState<string | null>(null);
   const [flashCells, setFlashCells] = useState<Set<string>>(new Set());
   const flashTimer = useRef<number | undefined>(undefined);
@@ -50,7 +49,6 @@ export function WordSearchGame() {
     const next = generateWordSearch(WORD_LISTS[grade], grade);
     setPuzzle(next);
     setFound(next.placements.map(() => false));
-    setWrongCount(0);
     setFirstTap(null);
     window.clearTimeout(flashTimer.current);
     setFlashCells(new Set());
@@ -74,14 +72,14 @@ export function WordSearchGame() {
     return {
       words: puzzle.placements.map((p) => ({ word: p.word, hint: p.hint })),
       index: Math.min(foundCount, total - 1),
-      // Each pair of wrong guesses costs one star-point.
-      score: Math.max(0, total - Math.floor(wrongCount / 2)),
+      // Word searches are about completion — every found word scores.
+      score: foundCount,
       streak: 0,
       bestStreak: 0,
       results: puzzle.placements.map(() => true),
       phase: foundCount === total ? "done" : "playing",
     };
-  }, [puzzle, found, wrongCount]);
+  }, [puzzle, found]);
 
   const tapCell = (k: string) => {
     if (!puzzle) return;
@@ -101,15 +99,14 @@ export function WordSearchGame() {
     }
     const lineSet = line.join("|");
     const reversedSet = [...line].reverse().join("|");
-    const hit = puzzle.placements.findIndex((p, i) => {
-      if (found[i]) return false;
+    const hit = puzzle.placements.findIndex((p) => {
       const cells = placementCells(p).join("|");
       return cells === lineSet || cells === reversedSet;
     });
     if (hit >= 0) {
-      setFound(found.map((f, i) => (i === hit ? true : f)));
+      // Re-selecting an already-found word is a harmless no-op.
+      if (!found[hit]) setFound(found.map((f, i) => (i === hit ? true : f)));
     } else {
-      setWrongCount((n) => n + 1);
       flashWrong(line);
     }
   };
@@ -145,7 +142,6 @@ export function WordSearchGame() {
               style={{
                 gridTemplateColumns: `repeat(${puzzle.size}, minmax(0, 1fr))`,
               }}
-              role="grid"
               aria-label="Letter grid"
             >
               {puzzle.grid.map((rowLetters, r) =>
@@ -157,8 +153,9 @@ export function WordSearchGame() {
                       key={k}
                       type="button"
                       onClick={() => tapCell(k)}
-                      aria-label={`${letter}, row ${r + 1}, column ${c + 1}`}
-                      aria-pressed={firstTap === k}
+                      aria-label={`${letter}, row ${r + 1}, column ${c + 1}${
+                        firstTap === k ? ", selected as first letter" : ""
+                      }`}
                       className={cn(
                         "font-heading cursor-pointer rounded-md border-2 border-transparent text-center font-medium uppercase transition-colors",
                         "hover:border-ink focus-visible:outline-2 focus-visible:outline-ring",

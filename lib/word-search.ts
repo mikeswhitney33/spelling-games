@@ -29,33 +29,85 @@ export const WORD_SEARCH_CONFIG: Record<
 
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 
-function gridContainsBlockedWord(grid: string[][]): boolean {
-  const size = grid.length;
-  const lines: string[] = [];
+type Cell = { r: number; c: number };
+
+/** Every straight line of the grid: rows, columns, and both diagonal families. */
+function collectLines(size: number): Cell[][] {
+  const lines: Cell[][] = [];
   for (let r = 0; r < size; r++) {
-    lines.push(grid[r].join(""));
+    lines.push(Array.from({ length: size }, (_, c) => ({ r, c })));
   }
   for (let c = 0; c < size; c++) {
-    lines.push(grid.map((row) => row[c]).join(""));
+    lines.push(Array.from({ length: size }, (_, r) => ({ r, c })));
   }
   for (let d = -size + 1; d < size; d++) {
-    let diag = "";
-    let antiDiag = "";
+    const diag: Cell[] = [];
+    const antiDiag: Cell[] = [];
     for (let r = 0; r < size; r++) {
       const c = r + d;
-      if (c >= 0 && c < size) diag += grid[r][c];
+      if (c >= 0 && c < size) diag.push({ r, c });
       const ac = size - 1 - r + d;
-      if (ac >= 0 && ac < size) antiDiag += grid[r][ac];
+      if (ac >= 0 && ac < size) antiDiag.push({ r, c: ac });
     }
     if (diag.length >= 3) lines.push(diag);
     if (antiDiag.length >= 3) lines.push(antiDiag);
   }
-  return lines.some((line) => {
-    const reversed = [...line].reverse().join("");
-    return BLOCKED_WORDS.some(
-      (bad) => line.includes(bad) || reversed.includes(bad),
-    );
-  });
+  return lines;
+}
+
+/**
+ * True when the filled grid has a problem the fill should be rerolled for:
+ * a blocked word touching at least one fill cell (a blocked substring living
+ * entirely inside a legitimately placed word, like the "ass" in "embarrass",
+ * is fine), or a stray copy of an answer word away from its real placement.
+ */
+function gridHasProblem(
+  grid: string[][],
+  placements: WordSearchPlacement[],
+): boolean {
+  const size = grid.length;
+  const placedCells = new Set<string>();
+  const placementPaths = new Map<string, Set<string>>();
+  for (const p of placements) {
+    const path = p.word
+      .split("")
+      .map((_, i) => `${p.row + p.dRow * i},${p.col + p.dCol * i}`);
+    path.forEach((k) => placedCells.add(k));
+    const reversed = [...path].reverse();
+    const set = placementPaths.get(p.word) ?? new Set<string>();
+    set.add(path.join("|"));
+    set.add(reversed.join("|"));
+    placementPaths.set(p.word, set);
+  }
+
+  const answerWords = [...placementPaths.keys()];
+  for (const line of collectLines(size)) {
+    for (const oriented of [line, [...line].reverse()]) {
+      const text = oriented.map(({ r, c }) => grid[r][c]).join("");
+      for (const bad of BLOCKED_WORDS) {
+        for (let at = text.indexOf(bad); at !== -1; at = text.indexOf(bad, at + 1)) {
+          const window = oriented.slice(at, at + bad.length);
+          if (window.some(({ r, c }) => !placedCells.has(`${r},${c}`))) {
+            return true;
+          }
+        }
+      }
+      for (const word of answerWords) {
+        for (
+          let at = text.indexOf(word);
+          at !== -1;
+          at = text.indexOf(word, at + 1)
+        ) {
+          const path = oriented
+            .slice(at, at + word.length)
+            .map(({ r, c }) => `${r},${c}`)
+            .join("|");
+          if (!placementPaths.get(word)!.has(path)) return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 /** Build a word-search grid with words running right, down, or diagonally. */
@@ -90,6 +142,9 @@ export function generateWordSearch(
     for (const entry of entries) {
       if (placements.length >= count) break;
       const word = entry.word.toLowerCase();
+      // Reverse pairs (nap/pan) make selections ambiguous — keep one.
+      const reversed = [...word].reverse().join("");
+      if (placements.some((p) => p.word === reversed)) continue;
       let placed = false;
       for (let attempt2 = 0; attempt2 < 60 && !placed; attempt2++) {
         const [dRow, dCol] = directions[Math.floor(rng() * directions.length)];
@@ -117,31 +172,36 @@ export function generateWordSearch(
   }
 
   // Fill the empty cells, biased toward the placed words' letters so the fill
-  // looks plausible; reroll the whole fill if it accidentally spells anything
-  // from the blocked list.
+  // looks plausible; reroll the fill if it forms a blocked word or a stray
+  // copy of an answer word.
   const wordLetters = best.placements.flatMap((p) => p.word.split(""));
-  for (let reroll = 0; reroll < 20; reroll++) {
-    const grid: string[][] = Array.from({ length: size }, (_, r) =>
+  const buildGrid = (fill: (r: number, c: number) => string): string[][] =>
+    Array.from({ length: size }, (_, r) =>
       Array.from({ length: size }, (_, c) => {
         const placedLetter = best.cells.get(`${r},${c}`);
-        if (placedLetter) return placedLetter;
-        return rng() < 0.5 && wordLetters.length > 0
-          ? wordLetters[Math.floor(rng() * wordLetters.length)]
-          : ALPHABET[Math.floor(rng() * ALPHABET.length)];
+        return placedLetter ?? fill(r, c);
       }),
     );
-    if (!gridContainsBlockedWord(grid)) {
+
+  for (let reroll = 0; reroll < 20; reroll++) {
+    const grid = buildGrid(() =>
+      rng() < 0.5 && wordLetters.length > 0
+        ? wordLetters[Math.floor(rng() * wordLetters.length)]
+        : ALPHABET[Math.floor(rng() * ALPHABET.length)],
+    );
+    if (!gridHasProblem(grid, best.placements)) {
       return { grid, placements: shuffle(best.placements, rng), size };
     }
   }
 
-  // Last resort: all-consonant fill can't spell anything on the blocked list.
-  const grid: string[][] = Array.from({ length: size }, (_, r) =>
-    Array.from({ length: size }, (_, c) => {
-      const placedLetter = best.cells.get(`${r},${c}`);
-      if (placedLetter) return placedLetter;
-      return "bcdfghjklmnpqrstvwxz"[Math.floor(rng() * 20)];
-    }),
-  );
-  return { grid, placements: shuffle(best.placements, rng), size };
+  // Last resort: uniform-random fill without the answer-letter bias; take the
+  // first clean one, and after that accept the small remaining risk.
+  for (let reroll = 0; ; reroll++) {
+    const grid = buildGrid(
+      () => ALPHABET[Math.floor(rng() * ALPHABET.length)],
+    );
+    if (reroll >= 20 || !gridHasProblem(grid, best.placements)) {
+      return { grid, placements: shuffle(best.placements, rng), size };
+    }
+  }
 }
