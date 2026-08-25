@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PartyPopper, Puzzle, Search, Shuffle, Volume2 } from "lucide-react";
+import { Eye, PartyPopper, Puzzle, Search, Shuffle, Volume2 } from "lucide-react";
 import type { ComponentType } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,14 @@ const GAME_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   "listen-and-spell": Volume2,
   "spot-the-word": Search,
   "balloon-pop": PartyPopper,
+  "flash-spell": Eye,
 };
+
+const COUNT_WORDS = [
+  "Zero", "One", "Two", "Three", "Four", "Five", "Six",
+  "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve",
+];
+const GAME_COUNT_WORD = COUNT_WORDS[GAMES.length] ?? String(GAMES.length);
 
 const HERO_TILES = [
   { letter: "s", tone: "bg-coral-soft", tilt: "-rotate-6" },
@@ -55,7 +62,7 @@ export default function Home() {
             Practice that feels like recess.
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-            Five quick games, four levels — from first words like{" "}
+            {GAME_COUNT_WORD} quick games, four levels — from first words like{" "}
             <em className="font-semibold not-italic text-coral">cat</em> to
             champion stumpers like{" "}
             <em className="font-semibold not-italic text-sky">mischievous</em>.

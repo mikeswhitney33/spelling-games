@@ -18,7 +18,7 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "Spell It! — Spelling Games for Kids",
   description:
-    "Free spelling games for kids from kindergarten through middle school. Unscramble words, fill in missing letters, listen and spell, spot the right spelling, and save the balloons.",
+    "Free spelling games for kids from kindergarten through middle school — grade-level word lists, playful letter tiles, and practice that feels like recess.",
 };
 
 function LogoTiles() {
