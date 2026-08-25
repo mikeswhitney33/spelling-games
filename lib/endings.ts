@@ -12,6 +12,8 @@ export interface EndingTask {
   word: string;
   /** The spelling rule, shown as feedback after each attempt. */
   hint: string;
+  /** Alternate spellings that are also correct (e.g. British variants). */
+  also?: string[];
 }
 
 export const ENDING_TASKS: Record<GradeBand, EndingTask[]> = {
@@ -78,11 +80,11 @@ export const ENDING_TASKS: Record<GradeBand, EndingTask[]> = {
     { base: "picnic", suffix: "ing", word: "picnicking", hint: "Add a k so the c stays hard." },
     { base: "happy", suffix: "ly", word: "happily", hint: "Change the y to i before ly." },
     { base: "easy", suffix: "ly", word: "easily", hint: "Change the y to i before ly." },
-    { base: "terrible", suffix: "ly", word: "terribly", hint: "Words ending in le drop the e: just add y." },
+    { base: "terrible", suffix: "y", word: "terribly", hint: "Words ending in le drop the e: just add y." },
     { base: "sincere", suffix: "ly", word: "sincerely", hint: "Keep the e — just add ly." },
     { base: "immediate", suffix: "ly", word: "immediately", hint: "Keep the e — just add ly." },
     { base: "argue", suffix: "ment", word: "argument", hint: "Argument drops the e — a famous exception!" },
-    { base: "judge", suffix: "ment", word: "judgment", hint: "American English drops the e — another exception!" },
+    { base: "judge", suffix: "ment", word: "judgment", also: ["judgement"], hint: "American English drops the e — British English keeps it. Both are real!" },
     { base: "achieve", suffix: "ment", word: "achievement", hint: "Keep the e — just add ment." },
     { base: "notice", suffix: "able", word: "noticeable", hint: "Keep the e so the c stays soft." },
     { base: "fame", suffix: "ous", word: "famous", hint: "Drop the e before ous." },

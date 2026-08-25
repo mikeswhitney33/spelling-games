@@ -63,7 +63,7 @@ function EndingWord({
     if (outcome !== null) return;
     const attempt = typed.trim().toLowerCase();
     if (!attempt) return;
-    if (attempt === task.word.toLowerCase()) {
+    if (attempt === task.word.toLowerCase() || task.also?.includes(attempt)) {
       setOutcome(true);
       onJudged(true);
     } else if (!retrying) {
