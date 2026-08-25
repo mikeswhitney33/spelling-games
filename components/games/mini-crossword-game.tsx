@@ -61,6 +61,8 @@ export function MiniCrosswordGame() {
     setResults(next.placements.map(() => null));
     setSelected(0);
     setActiveCell(null);
+    window.clearTimeout(shakeTimer.current);
+    setShakeIndex(null);
     filledBefore.current = new Set();
   }, [grade, roundId]);
 
@@ -97,7 +99,7 @@ export function MiniCrosswordGame() {
     };
   }, [puzzle, solved, results]);
 
-  const checkWords = (nextLetters: Record<string, string>) => {
+  const checkWords = (nextLetters: Record<string, string>, changedKey: string) => {
     if (!puzzle) return;
     const nextSolved = [...solved];
     const nextResults = [...results];
@@ -108,9 +110,16 @@ export function MiniCrosswordGame() {
       if (!cells.every((k) => nextLetters[k])) return;
       const attempt = cells.map((k) => nextLetters[k]).join("");
       if (attempt === p.word) {
+        // A correct word counts no matter which word the kid was working on.
         nextSolved[index] = true;
         nextResults[index] = nextResults[index] ?? true;
-      } else if (!filledBefore.current.has(index)) {
+      } else if (
+        // A wrong fill only counts against the word the kid is actually
+        // typing — a stray crossing letter shouldn't dock two words at once.
+        index === selectedRef.current &&
+        cells.includes(changedKey) &&
+        !filledBefore.current.has(index)
+      ) {
         filledBefore.current.add(index);
         nextResults[index] = nextResults[index] ?? false;
         shook = index;
@@ -151,17 +160,22 @@ export function MiniCrosswordGame() {
     if (other !== undefined) setSelected(other);
   };
 
+  /** Move along the selected word, skipping locked cells in that direction. */
   const moveFocus = (k: string, delta: 1 | -1): string | null => {
     if (!puzzle) return null;
     const cells = placementCells(puzzle.placements[selectedRef.current]);
-    const at = cells.indexOf(k);
+    let at = cells.indexOf(k);
     if (at === -1) return null;
-    const next = cells[at + delta];
-    if (!next) return null;
-    inputs.current.get(next)?.focus();
-    inputs.current.get(next)?.select();
-    setActiveCell(next);
-    return next;
+    for (at += delta; at >= 0 && at < cells.length; at += delta) {
+      if (!isLocked(cells[at])) {
+        const next = cells[at];
+        inputs.current.get(next)?.focus();
+        inputs.current.get(next)?.select();
+        setActiveCell(next);
+        return next;
+      }
+    }
+    return null;
   };
 
   const handleChange = (k: string, raw: string) => {
@@ -170,18 +184,43 @@ export function MiniCrosswordGame() {
     const next = { ...lettersRef.current, [k]: char };
     if (!char) delete next[k];
     setLetters(next);
-    checkWords(next);
+    checkWords(next, k);
     if (char) moveFocus(k, 1);
+  };
+
+  const ARROW_DELTAS: Record<string, [number, number]> = {
+    ArrowUp: [-1, 0],
+    ArrowDown: [1, 0],
+    ArrowLeft: [0, -1],
+    ArrowRight: [0, 1],
   };
 
   const handleKeyDown = (k: string, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !lettersRef.current[k]) {
       e.preventDefault();
       const prev = moveFocus(k, -1);
-      if (prev && !isLocked(prev)) {
+      if (prev) {
         const next = { ...lettersRef.current };
         delete next[prev];
         setLetters(next);
+      }
+      return;
+    }
+    const arrow = ARROW_DELTAS[e.key];
+    if (arrow && puzzle) {
+      e.preventDefault();
+      const [r, c] = k.split(",").map(Number);
+      // Walk in the arrow direction until the next cell that exists.
+      const limit = Math.max(puzzle.width, puzzle.height);
+      for (let step = 1; step <= limit; step++) {
+        const target = cellKey(r + arrow[0] * step, c + arrow[1] * step);
+        const input = inputs.current.get(target);
+        if (input) {
+          input.focus();
+          input.select();
+          setActiveCell(target);
+          break;
+        }
       }
     }
   };
@@ -197,9 +236,25 @@ export function MiniCrosswordGame() {
     ? new Set(placementCells(puzzle.placements[selected]))
     : new Set<string>();
   const shakeCells =
-    puzzle && shakeIndex !== null
+    puzzle && shakeIndex !== null && puzzle.placements[shakeIndex]
       ? new Set(placementCells(puzzle.placements[shakeIndex]))
       : new Set<string>();
+
+  /** Screen-reader label tying a cell to its clue and letter position. */
+  const cellLabel = (k: string): string => {
+    if (!puzzle) return "";
+    const info = cellMap.get(k);
+    if (!info) return "";
+    const primary =
+      info.indices.find((i) => i === selectedRef.current) ??
+      info.indices.find((i) => puzzle.placements[i].dir === "across") ??
+      info.indices[0];
+    const p = puzzle.placements[primary];
+    const position = placementCells(p).indexOf(k) + 1;
+    return `Clue ${p.number} ${p.dir}, letter ${position} of ${p.word.length}. ${p.hint}${
+      solved[primary] ? " Solved." : ""
+    }`;
+  };
 
   return (
     <GameFrame
@@ -259,10 +314,11 @@ export function MiniCrosswordGame() {
                           }
                         }}
                         readOnly={locked}
+                        tabIndex={locked ? -1 : 0}
                         autoComplete="off"
                         autoCapitalize="off"
                         spellCheck={false}
-                        aria-label={`Row ${r + 1}, column ${c + 1}`}
+                        aria-label={cellLabel(k)}
                         className={cn(
                           "font-heading block rounded-md border-2 border-ink bg-card text-center font-semibold caret-transparent outline-none",
                           cellSize,

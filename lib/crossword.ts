@@ -58,6 +58,9 @@ export function generateCrossword(
   for (let attempt = 0; attempt < 30; attempt++) {
     const words = pickN(usable, Math.min(usable.length, 12), rng);
     const grid = new Map<string, string>();
+    // Directions already covering each cell, so two same-direction words can
+    // never overlap end-to-end (e.g. "art" extending into "cart").
+    const dirs = new Map<string, Set<Direction>>();
     const placed: typeof best = [];
 
     const setWord = (entry: WordEntry, row: number, col: number, dir: Direction) => {
@@ -65,6 +68,9 @@ export function generateCrossword(
         const r = dir === "down" ? row + i : row;
         const c = dir === "across" ? col + i : col;
         grid.set(key(r, c), entry.word[i]);
+        const set = dirs.get(key(r, c)) ?? new Set<Direction>();
+        set.add(dir);
+        dirs.set(key(r, c), set);
       }
       placed.push({ word: entry.word, hint: entry.hint, row, col, dir });
     };
@@ -82,6 +88,8 @@ export function generateCrossword(
         const existing = grid.get(key(r, c));
         if (existing !== undefined) {
           if (existing !== word[i]) return false;
+          // Only perpendicular crossings — never ride along a same-direction word.
+          if (dirs.get(key(r, c))?.has(dir)) return false;
           crossings++;
         } else {
           // An empty cell may not touch another word side-on.
