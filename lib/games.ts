@@ -65,6 +65,15 @@ export const GAMES: GameInfo[] = [
     skills: ["proofreading", "editing"],
   },
   {
+    slug: "ending-machine",
+    title: "Ending Machine",
+    tagline: "Word math",
+    description:
+      "Feed a word and an ending into the machine. Watch out — some letters double, drop, or change!",
+    color: "sun",
+    skills: ["spelling rules", "word endings"],
+  },
+  {
     slug: "balloon-pop",
     title: "Balloon Pop",
     tagline: "Save the balloons",
