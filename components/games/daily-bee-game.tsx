@@ -60,7 +60,11 @@ function readStreak(): StreakData {
 function saveStreak(today: string): StreakData {
   const data = readStreak();
   if (data.lastPlayed === today) return data;
-  const yesterday = formatDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
+  // Yesterday relative to the day being credited, not the wall clock —
+  // otherwise finishing just after midnight (or across DST) resets streaks.
+  const reference = new Date(`${today}T12:00:00`);
+  reference.setDate(reference.getDate() - 1);
+  const yesterday = formatDate(reference);
   const streak = data.lastPlayed === yesterday ? data.streak + 1 : 1;
   const next: StreakData = {
     lastPlayed: today,
@@ -77,7 +81,8 @@ function saveStreak(today: string): StreakData {
 
 interface Daily {
   pool: WordEntry[];
-  mechanics: Mechanic[];
+  /** Keyed by word so the pairing survives the round's presentation shuffle. */
+  mechanicByWord: Record<string, Mechanic>;
   date: string;
 }
 
@@ -85,37 +90,68 @@ export function DailyBeeGame() {
   const [grade, setGrade] = useGrade();
   const [daily, setDaily] = useState<Daily | null>(null);
   const [streak, setStreak] = useState<StreakData | null>(null);
+  const [dateTick, setDateTick] = useState(0);
   const recordedFor = useRef<string | null>(null);
+  const dailyDateRef = useRef<string | null>(null);
 
   useEffect(() => {
     const today = formatDate(new Date());
     const rng = mulberry32(hashString(`${today}-${grade}`));
     const pool = pickN(WORD_LISTS[grade], 10, rng);
-    const mechanics = pool.map(
-      () => MECHANICS[Math.floor(rng() * MECHANICS.length)],
+    const mechanicByWord = Object.fromEntries(
+      pool.map((e) => [e.word, MECHANICS[Math.floor(rng() * MECHANICS.length)]]),
     );
-    setDaily({ pool, mechanics, date: today });
+    setDaily({ pool, mechanicByWord, date: today });
+    dailyDateRef.current = today;
     setStreak(readStreak());
-  }, [grade]);
+  }, [grade, dateTick]);
+
+  // A tab left open across midnight should roll over to the new day's round.
+  useEffect(() => {
+    const checkDate = () => {
+      if (
+        dailyDateRef.current &&
+        formatDate(new Date()) !== dailyDateRef.current
+      ) {
+        setDateTick((n) => n + 1);
+      }
+    };
+    window.addEventListener("visibilitychange", checkDate);
+    window.addEventListener("focus", checkDate);
+    return () => {
+      window.removeEventListener("visibilitychange", checkDate);
+      window.removeEventListener("focus", checkDate);
+    };
+  }, []);
 
   const { state, record, advance, restart, roundId } = useGameRound(
     daily?.pool ?? EMPTY,
   );
 
-  // First completion of the day extends the streak.
+  // First completion of the day extends the streak. Credit the actual current
+  // day, in case the round straddled midnight.
   useEffect(() => {
     if (!daily || !state || state.phase !== "done") return;
-    if (recordedFor.current === daily.date) return;
-    recordedFor.current = daily.date;
-    setStreak(saveStreak(daily.date));
+    const today = formatDate(new Date());
+    if (recordedFor.current === today) return;
+    recordedFor.current = today;
+    setStreak(saveStreak(today));
   }, [state, daily]);
 
-  const entry = state?.phase === "playing" ? state.words[state.index] : null;
-  const mechanic = daily && state ? daily.mechanics[state.index] : null;
+  // Ignore round state until it was built from the current daily pool.
+  const roundReady =
+    daily !== null &&
+    state !== null &&
+    state.words.length > 0 &&
+    daily.pool.includes(state.words[0]);
+
+  const entry =
+    roundReady && state.phase === "playing" ? state.words[state.index] : null;
+  const mechanic = entry && daily ? daily.mechanicByWord[entry.word] : null;
   const playedToday = streak?.lastPlayed === daily?.date;
 
   const round =
-    daily && state
+    roundReady && daily && state
       ? {
           ...state,
           summaryText: `${state.score} of ${state.words.length} on today's challenge${
