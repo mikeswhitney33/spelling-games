@@ -92,7 +92,7 @@ function ScoreBar({ round }: { round: RoundState }) {
       <div className="flex-1">
         <div className="flex items-baseline justify-between font-heading text-sm font-medium text-muted-foreground">
           <span>
-            Word {round.index + 1} of {round.words.length}
+            {round.unit ?? "Word"} {round.index + 1} of {round.words.length}
           </span>
           <span className="flex items-center gap-3">
             {round.streak >= 2 && (
@@ -163,11 +163,15 @@ function RoundSummary({
           {SUMMARY_HEADLINES[stars]}
         </h2>
         <p className="mt-1 text-muted-foreground">
-          You spelled {round.score} of {round.words.length} words right
-          {round.bestStreak >= 3 && (
-            <> — best streak: {round.bestStreak} in a row</>
+          {round.summaryText ?? (
+            <>
+              You spelled {round.score} of {round.words.length} words right
+              {round.bestStreak >= 3 && (
+                <> — best streak: {round.bestStreak} in a row</>
+              )}
+              .
+            </>
           )}
-          .
         </p>
 
         {missed.length > 0 && (
