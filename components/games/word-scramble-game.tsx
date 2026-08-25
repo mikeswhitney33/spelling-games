@@ -42,7 +42,7 @@ export function WordScrambleGame() {
   );
 }
 
-function ScrambleWord({
+export function ScrambleWord({
   entry,
   isLast,
   onJudged,

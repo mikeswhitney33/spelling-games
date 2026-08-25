@@ -3,6 +3,7 @@ import {
   Brain,
   Cog,
   Compass,
+  Flame,
   Eye,
   LayoutGrid,
   PartyPopper,
@@ -33,6 +34,7 @@ const GAME_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   "mini-crossword": LayoutGrid,
   "word-search": Compass,
   "memory-match": Brain,
+  "daily-bee": Flame,
 };
 
 const COUNT_WORDS = [

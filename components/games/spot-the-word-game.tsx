@@ -40,7 +40,7 @@ export function SpotTheWordGame() {
   );
 }
 
-function SpotWord({
+export function SpotWord({
   entry,
   isLast,
   onJudged,

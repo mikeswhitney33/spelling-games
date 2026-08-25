@@ -53,7 +53,7 @@ export function FlashSpellGame() {
   );
 }
 
-function FlashWord({
+export function FlashWord({
   entry,
   grade,
   isLast,

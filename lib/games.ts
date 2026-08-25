@@ -11,6 +11,15 @@ export interface GameInfo {
 
 export const GAMES: GameInfo[] = [
   {
+    slug: "daily-bee",
+    title: "Daily Bee",
+    tagline: "One round a day",
+    description:
+      "A fresh ten-word challenge every day, mixing all the games. Come back tomorrow to grow your streak!",
+    color: "sun",
+    skills: ["a little of everything", "streaks"],
+  },
+  {
     slug: "word-scramble",
     title: "Word Scramble",
     tagline: "Untangle the tiles",
