@@ -8,15 +8,11 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 
+import { BLOCKED_WORDS } from "../lib/blocked-words";
 import { misspellingCandidates } from "../lib/game-utils";
 import { WORD_LISTS } from "../lib/words";
 
-// Words that must never be shown to kids as a "fake spelling", whether or not
-// a dictionary knows them.
-const ALWAYS_BLOCKED = [
-  "sex", "sexy", "ass", "arse", "hell", "damn", "crap", "piss", "tit", "tits",
-  "cock", "dick", "cum", "fag", "fart", "poop", "pee", "butt", "nude", "porn",
-];
+const ALWAYS_BLOCKED = BLOCKED_WORDS;
 
 const DICT_PATH = "/usr/share/dict/words";
 const dictionary = new Set(
