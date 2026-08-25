@@ -83,6 +83,15 @@ export const GAMES: GameInfo[] = [
     skills: ["clue solving", "letter crossing"],
   },
   {
+    slug: "word-search",
+    title: "Word Search",
+    tagline: "Hidden word hunt",
+    description:
+      "Your spelling words are hiding in a grid of letters. Tap the first and last letter to catch one!",
+    color: "grape",
+    skills: ["word shapes", "sharp eyes"],
+  },
+  {
     slug: "balloon-pop",
     title: "Balloon Pop",
     tagline: "Save the balloons",
