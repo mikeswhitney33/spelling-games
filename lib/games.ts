@@ -1,4 +1,4 @@
-export type GameColor = "coral" | "sun" | "leaf" | "sky";
+export type GameColor = "coral" | "sun" | "leaf" | "sky" | "grape";
 
 export interface GameInfo {
   slug: string;
@@ -46,6 +46,15 @@ export const GAMES: GameInfo[] = [
     color: "leaf",
     skills: ["proofreading", "sharp eyes"],
   },
+  {
+    slug: "balloon-pop",
+    title: "Balloon Pop",
+    tagline: "Save the balloons",
+    description:
+      "Guess letters one at a time — every miss pops a balloon. Spell the word before they're all gone!",
+    color: "grape",
+    skills: ["letter patterns", "careful guesses"],
+  },
 ];
 
 export const COLOR_STYLES: Record<
@@ -75,5 +84,11 @@ export const COLOR_STYLES: Record<
     solid: "bg-sky",
     text: "text-sky",
     borderT: "border-t-sky",
+  },
+  grape: {
+    soft: "bg-grape-soft",
+    solid: "bg-grape",
+    text: "text-grape",
+    borderT: "border-t-grape",
   },
 };

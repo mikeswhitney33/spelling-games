@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Puzzle, Search, Shuffle, Volume2 } from "lucide-react";
+import { PartyPopper, Puzzle, Search, Shuffle, Volume2 } from "lucide-react";
 import type { ComponentType } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ const GAME_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   "missing-letters": Puzzle,
   "listen-and-spell": Volume2,
   "spot-the-word": Search,
+  "balloon-pop": PartyPopper,
 };
 
 const HERO_TILES = [
@@ -54,7 +55,7 @@ export default function Home() {
             Practice that feels like recess.
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-            Four quick games, four levels — from first words like{" "}
+            Five quick games, four levels — from first words like{" "}
             <em className="font-semibold not-italic text-coral">cat</em> to
             champion stumpers like{" "}
             <em className="font-semibold not-italic text-sky">mischievous</em>.

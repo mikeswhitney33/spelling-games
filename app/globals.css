@@ -19,6 +19,8 @@
   --color-leaf-soft: var(--leaf-soft);
   --color-sky: var(--sky);
   --color-sky-soft: var(--sky-soft);
+  --color-grape: var(--grape);
+  --color-grape-soft: var(--grape-soft);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -76,6 +78,8 @@
   --leaf-soft: oklch(0.95 0.05 155);
   --sky: oklch(0.66 0.125 240);
   --sky-soft: oklch(0.94 0.035 240);
+  --grape: oklch(0.55 0.155 300);
+  --grape-soft: oklch(0.94 0.04 300);
 }
 
 @layer base {
