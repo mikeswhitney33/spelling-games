@@ -74,6 +74,15 @@ export const GAMES: GameInfo[] = [
     skills: ["spelling rules", "word endings"],
   },
   {
+    slug: "mini-crossword",
+    title: "Mini Crossword",
+    tagline: "Five words, one grid",
+    description:
+      "A tiny crossword made from your spelling words. Use the clues to fill the grid!",
+    color: "leaf",
+    skills: ["clue solving", "letter crossing"],
+  },
+  {
     slug: "balloon-pop",
     title: "Balloon Pop",
     tagline: "Save the balloons",
