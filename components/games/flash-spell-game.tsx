@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Eye, Lightbulb, Volume2 } from "lucide-react";
+import { Eye, Volume2 } from "lucide-react";
 
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
+import { SpellingInput } from "@/components/spelling-input";
 import { Tile, tileSizeForWord } from "@/components/tile";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useSpeechSupported } from "@/hooks/use-speech-supported";
 import { useGrade, useSpellingRound } from "@/hooks/use-spelling-round";
 import { speak } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
@@ -70,8 +71,9 @@ function FlashWord({
   const [typed, setTyped] = useState("");
   const [outcome, setOutcome] = useState<boolean | null>(null);
   const [retrying, setRetrying] = useState(false);
-  const [showHint, setShowHint] = useState(false);
+  const soundWorks = useSpeechSupported();
   const inputRef = useRef<HTMLInputElement>(null);
+  const statusRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     if (phase !== "show") return;
@@ -82,7 +84,10 @@ function FlashWord({
 
   useEffect(() => {
     if (phase === "type") inputRef.current?.focus();
-  }, [phase]);
+    // Keep keyboard focus anchored during the re-show, since the form (and
+    // the previously focused input) unmounts for those two seconds.
+    if (phase === "show" && retrying) statusRef.current?.focus();
+  }, [phase, retrying]);
 
   const submit = () => {
     if (outcome !== null || phase !== "type") return;
@@ -116,13 +121,24 @@ function FlashWord({
             ))}
           </div>
           <p
-            className="font-heading mt-4 text-sm font-medium text-muted-foreground"
+            ref={statusRef}
+            tabIndex={-1}
+            className="font-heading mt-4 text-sm font-medium text-muted-foreground outline-none"
             role="status"
           >
             {retrying
               ? "One more look — you've got this!"
               : "Look closely… it's about to hide!"}
           </p>
+          {soundWorks && (
+            <Button
+              variant="outline"
+              className="font-heading mt-3"
+              onClick={() => speak(entry.word)}
+            >
+              <Volume2 aria-hidden="true" /> Hear it
+            </Button>
+          )}
         </>
       )}
 
@@ -134,7 +150,7 @@ function FlashWord({
             submit();
           }}
         >
-          <div className="flex justify-center gap-1.5" aria-hidden="true">
+          <div className="flex flex-wrap justify-center gap-1.5" aria-hidden="true">
             {entry.word.split("").map((_, i) => (
               <Tile
                 key={i}
@@ -146,23 +162,13 @@ function FlashWord({
           <label htmlFor="flash-input" className="sr-only">
             Type the word you saw
           </label>
-          <Input
+          <SpellingInput
             id="flash-input"
             ref={inputRef}
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                submit();
-              }
-            }}
             placeholder="Type it from memory…"
-            autoComplete="off"
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck={false}
-            className="font-heading mt-4 h-14 border-[3px] border-ink text-center !text-2xl lowercase tracking-wide shadow-[0_4px_0_var(--ink)]"
+            className="mt-4"
           />
           {retrying && (
             <p
@@ -187,18 +193,9 @@ function FlashWord({
               size="lg"
               className="font-heading"
               onClick={() => speak(entry.word)}
+              disabled={!soundWorks}
             >
               <Volume2 aria-hidden="true" /> Hear it
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="font-heading"
-              onClick={() => setShowHint(true)}
-              disabled={showHint}
-            >
-              <Lightbulb aria-hidden="true" /> Clue
             </Button>
           </div>
         </form>

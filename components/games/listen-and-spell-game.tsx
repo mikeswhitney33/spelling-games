@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { Lightbulb, Volume2 } from "lucide-react";
 
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
+import { SpellingInput } from "@/components/spelling-input";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useSpeechSupported } from "@/hooks/use-speech-supported";
 import { useGrade, useSpellingRound } from "@/hooks/use-spelling-round";
 import { speak } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
@@ -56,14 +57,11 @@ function ListenWord({
   const [outcome, setOutcome] = useState<boolean | null>(null);
   const [retrying, setRetrying] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [soundWorks, setSoundWorks] = useState(true);
+  const soundWorks = useSpeechSupported();
 
   useEffect(() => {
-    const supported =
-      typeof window !== "undefined" && "speechSynthesis" in window;
-    setSoundWorks(supported);
-    if (!supported) setShowHint(true);
-  }, []);
+    if (!soundWorks) setShowHint(true);
+  }, [soundWorks]);
 
   const submit = () => {
     if (outcome !== null) return;
@@ -110,23 +108,12 @@ function ListenWord({
           <label htmlFor="spelling-input" className="sr-only">
             Type the word you heard
           </label>
-          <Input
+          <SpellingInput
             id="spelling-input"
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                submit();
-              }
-            }}
             placeholder="Type the word…"
-            autoComplete="off"
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck={false}
             autoFocus
-            className="font-heading h-14 border-[3px] border-ink text-center !text-2xl lowercase tracking-wide shadow-[0_4px_0_var(--ink)]"
           />
           {retrying && (
             <p className="font-heading mt-3 text-sm font-medium text-coral" role="status">
