@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil } from "lucide-react";
 
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
@@ -98,15 +98,33 @@ function FixSentenceWord({
   const [retrying, setRetrying] = useState(false);
   const [findMisses, setFindMisses] = useState(0);
   const [shakingIndex, setShakingIndex] = useState<number | null>(null);
+  const [lastMissWord, setLastMissWord] = useState<string | null>(null);
+  const shakeTimer = useRef<number | undefined>(undefined);
+
+  // Safety net: if the sentence data ever fails to contain the target word,
+  // skip the word (with credit) instead of soft-locking the round.
+  const hasTarget = tokens.some((t) => t.isTarget);
+  const skipped = useRef(false);
+  useEffect(() => {
+    if (!hasTarget && !skipped.current) {
+      skipped.current = true;
+      onJudged(true);
+      onNext();
+    }
+  }, [hasTarget, onJudged, onNext]);
+
+  useEffect(() => () => window.clearTimeout(shakeTimer.current), []);
 
   const tapWord = (index: number) => {
     if (stage !== "find") return;
     if (tokens[index].isTarget) {
       setStage("fix");
     } else {
+      window.clearTimeout(shakeTimer.current);
       setShakingIndex(index);
+      setLastMissWord(tokens[index].shown);
       setFindMisses((n) => n + 1);
-      window.setTimeout(() => setShakingIndex(null), 400);
+      shakeTimer.current = window.setTimeout(() => setShakingIndex(null), 400);
     }
   };
 
@@ -176,8 +194,10 @@ function FixSentenceWord({
           {findMisses === 0
             ? "Tap the word that's spelled wrong."
             : findMisses === 1
-              ? "That one's spelled fine — keep hunting!"
-              : "Psst — check the highlighted word."}
+              ? `"${lastMissWord}" is spelled fine — keep hunting!`
+              : `"${lastMissWord}" is spelled fine. Psst — the wrong word starts with "${
+                  tokens.find((t) => t.isTarget)?.shown[0] ?? "?"
+                }".`}
         </p>
       )}
 
