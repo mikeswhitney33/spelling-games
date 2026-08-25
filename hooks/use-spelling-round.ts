@@ -4,8 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { pickN, ROUND_LENGTH } from "@/lib/game-utils";
 import { WORD_LISTS, type GradeBand, type WordEntry } from "@/lib/words";
 
-export interface RoundState {
-  words: WordEntry[];
+/** The minimum shape a round item needs: the answer word and a hint/rule. */
+export interface RoundItem {
+  word: string;
+  hint: string;
+}
+
+export interface RoundState<T extends RoundItem = RoundItem> {
+  words: T[];
   index: number;
   score: number;
   streak: number;
@@ -14,15 +20,16 @@ export interface RoundState {
   phase: "playing" | "done";
 }
 
-export function useSpellingRound(grade: GradeBand) {
+/** Shared 10-item round engine over any pool of round items. */
+export function useGameRound<T extends RoundItem>(pool: readonly T[]) {
   const [roundId, setRoundId] = useState(0);
   // Round is built client-side only (random picks), so it starts null to keep
   // the prerendered HTML and the first client render identical.
-  const [state, setState] = useState<RoundState | null>(null);
+  const [state, setState] = useState<RoundState<T> | null>(null);
 
   useEffect(() => {
     setState({
-      words: pickN(WORD_LISTS[grade], ROUND_LENGTH),
+      words: pickN(pool, ROUND_LENGTH),
       index: 0,
       score: 0,
       streak: 0,
@@ -30,7 +37,7 @@ export function useSpellingRound(grade: GradeBand) {
       results: [],
       phase: "playing",
     });
-  }, [grade, roundId]);
+  }, [pool, roundId]);
 
   const record = useCallback((correct: boolean) => {
     setState((s) => {
@@ -58,6 +65,11 @@ export function useSpellingRound(grade: GradeBand) {
   const restart = useCallback(() => setRoundId((n) => n + 1), []);
 
   return { state, record, advance, restart, roundId };
+}
+
+/** A round drawn from the grade band's spelling word list. */
+export function useSpellingRound(grade: GradeBand) {
+  return useGameRound(WORD_LISTS[grade]);
 }
 
 const GRADE_STORAGE_KEY = "spell-it-grade";

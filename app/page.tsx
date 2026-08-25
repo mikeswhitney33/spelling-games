@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  Cog,
   Eye,
   PartyPopper,
   Pencil,
@@ -25,6 +26,7 @@ const GAME_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   "balloon-pop": PartyPopper,
   "flash-spell": Eye,
   "fix-the-sentence": Pencil,
+  "ending-machine": Cog,
 };
 
 const COUNT_WORDS = [
