@@ -10,6 +10,7 @@ A collection of free spelling games for kids, from kindergarten through middle s
 | **Missing Letters** | Tricky letters — fill the gaps from a letter bank |
 | **Listen & Spell** | Sounding out — hear a word (speech synthesis) and type it |
 | **Spot the Word** | Proofreading — pick the one real spelling out of four |
+| **Balloon Pop** | Letter patterns — guess letters before all six balloons pop (hangman, minus the hanging) |
 
 Every game has four levels (Grades K–1, 2–3, 4–5, 6+) with word lists mixing early sight words and the words kids most often misspell. Rounds are 10 words with stars, streaks, a second try on misses, and a "words to practice" recap.
 
@@ -28,17 +29,9 @@ npm run build
 
 Outputs a fully static site to `out/`.
 
-## Deploy to GitHub Pages
+## Deploy
 
-1. Push this repo to GitHub.
-2. In the repo settings, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-3. Push to `main` — the included workflow ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)) builds and deploys automatically.
-
-The workflow sets the base path to `/<repo-name>` for project sites and to `/` for `<user>.github.io` repos, so it works for either without changes. For a local build that mirrors a project-site deploy:
-
-```bash
-NEXT_PUBLIC_BASE_PATH=/spelling-games npm run build
-```
+Deployed on Vercel — import the repo at [vercel.com/new](https://vercel.com/new) and every push to `main` deploys automatically, zero config. The site is a plain static export (`out/`), so it can also be dropped onto any static host.
 
 ## Adding words
 
