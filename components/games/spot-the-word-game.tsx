@@ -7,15 +7,10 @@ import { FeedbackPanel, GameFrame } from "@/components/game-frame";
 import { useGrade, useSpellingRound } from "@/hooks/use-spelling-round";
 import { makeMisspellings, shuffle } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
-import { WORD_LISTS, type WordEntry } from "@/lib/words";
+import { ALL_WORDS, type WordEntry } from "@/lib/words";
 import { cn } from "@/lib/utils";
 
 const game = GAMES.find((g) => g.slug === "spot-the-word")!;
-
-// Never offer another list word as a "fake" spelling.
-const ALL_LIST_WORDS = new Set(
-  Object.values(WORD_LISTS).flatMap((list) => list.map((e) => e.word)),
-);
 
 export function SpotTheWordGame() {
   const [grade, setGrade] = useGrade();
@@ -57,7 +52,7 @@ function SpotWord({
   onNext: () => void;
 }) {
   const options = useMemo(() => {
-    const fakes = makeMisspellings(entry.word, 3, Math.random, ALL_LIST_WORDS);
+    const fakes = makeMisspellings(entry.word, 3, Math.random, ALL_WORDS);
     return shuffle([entry.word, ...fakes]);
   }, [entry.word]);
   const [chosen, setChosen] = useState<string | null>(null);

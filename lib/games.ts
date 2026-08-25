@@ -56,6 +56,15 @@ export const GAMES: GameInfo[] = [
     skills: ["whole-word memory", "careful looking"],
   },
   {
+    slug: "fix-the-sentence",
+    title: "Fix the Sentence",
+    tagline: "Find it, fix it",
+    description:
+      "One word in the sentence is spelled wrong. Hunt it down, then type the fix!",
+    color: "sky",
+    skills: ["proofreading", "editing"],
+  },
+  {
     slug: "balloon-pop",
     title: "Balloon Pop",
     tagline: "Save the balloons",

@@ -1,3 +1,5 @@
+import { REAL_WORD_GUARD } from "./real-word-guard";
+
 export type Rng = () => number;
 
 export function mulberry32(seed: number): Rng {
@@ -55,32 +57,15 @@ const PHONETIC_SWAPS: Record<string, string[]> = {
 };
 
 /**
- * Small guard list of common English words so single-edit misspellings of easy
- * words (cat → act, cut) never show up as "fake" options in Spot the Word.
- * Not exhaustive — just the likely collisions for short words.
+ * Every real-word collision the candidate generator can produce for the
+ * current word lists, precomputed from the system dictionary by
+ * scripts/generate-real-word-guard.ts. Regenerate with
+ * `npm run generate:guard` after editing lib/words.ts or the edit rules.
  */
-const REAL_WORDS = new Set(
-  (
-    "act ant art ate bat bet bit bad bag ban bar bin bun bus but bud cab can cap car " +
-    "cob cod cop cot cub cut dab dam den dig dim din dip dot dug fan fat fig fin fit " +
-    "fog fun fur gap gas get got gum gun gut ham has hem hid him hip hit hog hot hub " +
-    "hug hum hut jab jet jig job jog jot jug keg kin kit lab lag lap led let lid lip " +
-    "lit lot mad man mat men met mob mop mug nab nag net nip nod not nut pad pal pat " +
-    "peg pen pet pin pit pod pop pot pun pup put rag ram ran rap rat rib rid rig rim " +
-    "rip rob rod rot rub rug rum rut sad sag sap sat set sin sip sir sit sob son sub " +
-    "sum tab tag tan tap tar tin tip ton tot tub tug van vat vet wag web wed wig wit " +
-    "won yak yam yet zap net pit ten den one two three four five nine here hare hear " +
-    "wear were three there their form from trail trial quite quiet"
-  ).split(/\s+/),
-);
+const REAL_WORDS = new Set(REAL_WORD_GUARD);
 
-/** Generate plausible misspellings of a word using common error patterns. */
-export function makeMisspellings(
-  word: string,
-  count: number,
-  rng: Rng = Math.random,
-  avoid?: ReadonlySet<string>,
-): string[] {
+/** All single-edit misspelling candidates for a word, before filtering. */
+export function misspellingCandidates(word: string): string[] {
   const candidates = new Set<string>();
 
   // Transpose adjacent letters
@@ -122,8 +107,18 @@ export function makeMisspellings(
   }
 
   candidates.delete(word);
-  const pool = [...candidates].filter(
-    (c) => c.length >= 2 && !REAL_WORDS.has(c) && !avoid?.has(c),
+  return [...candidates].filter((c) => c.length >= 2);
+}
+
+/** Generate plausible misspellings of a word using common error patterns. */
+export function makeMisspellings(
+  word: string,
+  count: number,
+  rng: Rng = Math.random,
+  avoid?: ReadonlySet<string>,
+): string[] {
+  const pool = misspellingCandidates(word).filter(
+    (c) => !REAL_WORDS.has(c.toLowerCase()) && !avoid?.has(c.toLowerCase()),
   );
   return pickN(pool, count, rng);
 }
