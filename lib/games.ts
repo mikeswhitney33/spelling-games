@@ -47,6 +47,15 @@ export const GAMES: GameInfo[] = [
     skills: ["proofreading", "sharp eyes"],
   },
   {
+    slug: "flash-spell",
+    title: "Flash Spell",
+    tagline: "Look, remember, spell",
+    description:
+      "The word flashes on screen, then hides. Spell it from memory before it fades away for good!",
+    color: "coral",
+    skills: ["whole-word memory", "careful looking"],
+  },
+  {
     slug: "balloon-pop",
     title: "Balloon Pop",
     tagline: "Save the balloons",
