@@ -24,10 +24,10 @@ cd ios && xcodebuild -project SpellIt.xcodeproj -scheme SpellIt \
 ## One-time setup before submission
 
 1. **Apple Developer Program** — enroll at developer.apple.com ($99/yr).
-2. **Bundle ID** — currently `com.mikewhitney.spellit` (set in
-   `ios/project.yml`). Change it there if you want a different one, then
-   re-run `xcodegen generate`. Register the ID in your developer account
-   (Xcode's automatic signing does this for you on first archive).
+2. **Bundle ID** — `com.skdaddle.spellit` (set in `ios/project.yml`,
+   team N888N8Y6N6 / Skdaddle LLC). Change it there if you want a
+   different one, then re-run `xcodegen generate`. The ID is registered
+   in the Skdaddle developer account.
 3. **Signing** — open the project in Xcode → Signing & Capabilities → pick
    your team. `CODE_SIGN_STYLE` is already Automatic.
 4. **App Store Connect** — create the app record with the same bundle ID.
