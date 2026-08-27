@@ -1,6 +1,6 @@
+import type { BankEntry } from "./banks";
 import { BLOCKED_WORDS } from "./blocked-words";
 import { pickN, shuffle, type Rng } from "./game-utils";
-import type { GradeBand, WordEntry } from "./words";
 
 export interface WordSearchPlacement {
   word: string;
@@ -17,15 +17,19 @@ export interface WordSearchPuzzle {
   size: number;
 }
 
-export const WORD_SEARCH_CONFIG: Record<
-  GradeBand,
-  { size: number; count: number; diagonals: boolean }
-> = {
-  "k-1": { size: 7, count: 5, diagonals: false },
-  "2-3": { size: 9, count: 6, diagonals: false },
-  "4-5": { size: 11, count: 6, diagonals: true },
-  "6-plus": { size: 12, count: 6, diagonals: true },
-};
+export interface WordSearchConfig {
+  size: number;
+  count: number;
+  diagonals: boolean;
+}
+
+/** Grid size scales with the pool's word lengths instead of a grade band. */
+export function configForPool(pool: readonly BankEntry[]): WordSearchConfig {
+  const lengths = pool.map((e) => e.word.length).filter((l) => l <= 12);
+  const maxLen = lengths.length > 0 ? Math.max(...lengths) : 5;
+  const size = Math.min(12, Math.max(7, maxLen + 2));
+  return { size, count: size <= 8 ? 5 : 6, diagonals: size >= 10 };
+}
 
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 
@@ -112,11 +116,11 @@ function gridHasProblem(
 
 /** Build a word-search grid with words running right, down, or diagonally. */
 export function generateWordSearch(
-  pool: readonly WordEntry[],
-  grade: GradeBand,
+  pool: readonly BankEntry[],
   rng: Rng = Math.random,
+  config: WordSearchConfig = configForPool(pool),
 ): WordSearchPuzzle {
-  const { size, count, diagonals } = WORD_SEARCH_CONFIG[grade];
+  const { size, count, diagonals } = config;
   const usable = pool.filter((e) => e.word.length <= size);
   const directions: [0 | 1, 0 | 1][] = diagonals
     ? [
@@ -164,7 +168,7 @@ export function generateWordSearch(
         for (let i = 0; i < word.length; i++) {
           cells.set(`${row + dRow * i},${col + dCol * i}`, word[i]);
         }
-        placements.push({ word, hint: entry.hint, row, col, dRow, dCol });
+        placements.push({ word, hint: entry.hint ?? "", row, col, dRow, dCol });
         placed = true;
       }
     }

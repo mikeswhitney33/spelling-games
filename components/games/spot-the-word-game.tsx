@@ -3,18 +3,20 @@
 import { useMemo, useState } from "react";
 import { Check, Search, X } from "lucide-react";
 
+import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
-import { useGrade, useSpellingRound } from "@/hooks/use-spelling-round";
+import { useWordBank } from "@/hooks/use-bank";
+import { useGameRound } from "@/hooks/use-spelling-round";
+import { ALL_BUILT_IN_WORDS, type BankEntry } from "@/lib/banks";
 import { makeMisspellings, shuffle } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
-import { ALL_WORDS, type WordEntry } from "@/lib/words";
 import { cn } from "@/lib/utils";
 
 const game = GAMES.find((g) => g.slug === "spot-the-word")!;
 
 export function SpotTheWordGame() {
-  const [grade, setGrade] = useGrade();
-  const { state, record, advance, restart, roundId } = useSpellingRound(grade);
+  const { bank, banks, setActive } = useWordBank();
+  const { state, record, advance, restart, roundId } = useGameRound(bank.entries);
   const entry = state?.phase === "playing" ? state.words[state.index] : null;
 
   return (
@@ -22,14 +24,18 @@ export function SpotTheWordGame() {
       game={game}
       icon={<Search className="h-7 w-7" aria-hidden="true" />}
       instructions="Read the clue, then tap the one spelling that's really right."
-      grade={grade}
-      onGradeChange={setGrade}
+      picker={<BankPicker bank={bank} banks={banks} onChange={setActive} />}
+      notice={
+        bank.entries.length < 4 ? (
+          <NotEnoughWords need={4} requirement="words" />
+        ) : undefined
+      }
       round={state}
       onRestart={restart}
     >
       {state && entry && (
         <SpotWord
-          key={`${roundId}-${state.index}-${grade}`}
+          key={`${roundId}-${state.index}-${bank.id}`}
           entry={entry}
           isLast={state.index + 1 === state.words.length}
           onJudged={record}
@@ -46,13 +52,20 @@ export function SpotWord({
   onJudged,
   onNext,
 }: {
-  entry: WordEntry;
+  entry: BankEntry;
   isLast: boolean;
   onJudged: (correct: boolean) => void;
   onNext: () => void;
 }) {
   const options = useMemo(() => {
-    const fakes = makeMisspellings(entry.word, 3, Math.random, ALL_WORDS);
+    const cautious = !ALL_BUILT_IN_WORDS.has(entry.word.toLowerCase());
+    const fakes = makeMisspellings(
+      entry.word,
+      3,
+      Math.random,
+      ALL_BUILT_IN_WORDS,
+      cautious,
+    );
     return shuffle([entry.word, ...fakes]);
   }, [entry.word]);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -65,7 +78,9 @@ export function SpotWord({
 
   return (
     <div className="text-center">
-      <p className="text-sm text-muted-foreground">Clue: {entry.hint}</p>
+      {entry.hint && (
+        <p className="text-sm text-muted-foreground">Clue: {entry.hint}</p>
+      )}
 
       <div className="mx-auto mt-6 grid max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
         {options.map((option) => {

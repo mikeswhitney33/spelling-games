@@ -8,9 +8,9 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 
+import { BUILT_IN_BANKS } from "../lib/banks";
 import { BLOCKED_WORDS } from "../lib/blocked-words";
 import { misspellingCandidates } from "../lib/game-utils";
-import { WORD_LISTS } from "../lib/words";
 
 const ALWAYS_BLOCKED = BLOCKED_WORDS;
 
@@ -26,8 +26,8 @@ const collisions = new Set<string>(ALWAYS_BLOCKED);
 let minPool = Infinity;
 let minWord = "";
 
-for (const list of Object.values(WORD_LISTS)) {
-  for (const entry of list) {
+for (const bank of BUILT_IN_BANKS) {
+  for (const entry of bank.entries) {
     const candidates = misspellingCandidates(entry.word.toLowerCase());
     let clean = 0;
     for (const candidate of candidates) {

@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Brain } from "lucide-react";
 
+import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { GameFrame } from "@/components/game-frame";
-import { useGrade } from "@/hooks/use-spelling-round";
+import { useWordBank } from "@/hooks/use-bank";
 import type { RoundState } from "@/hooks/use-spelling-round";
+import type { BankEntry } from "@/lib/banks";
 import { pickN, shuffle } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
-import { WORD_LISTS, type WordEntry } from "@/lib/words";
 import { cn } from "@/lib/utils";
 
 const game = GAMES.find((g) => g.slug === "memory-match")!;
@@ -33,9 +34,13 @@ function scoreForAttempts(attempts: number, total: number): number {
 }
 
 export function MemoryMatchGame() {
-  const [grade, setGrade] = useGrade();
+  const { bank, banks, setActive } = useWordBank();
+  const pool = useMemo(
+    () => bank.entries.filter((e) => e.hint),
+    [bank],
+  );
   const [roundId, setRoundId] = useState(0);
-  const [entries, setEntries] = useState<WordEntry[] | null>(null);
+  const [entries, setEntries] = useState<BankEntry[] | null>(null);
   const [cards, setCards] = useState<MemoryCard[]>([]);
   const [faceUp, setFaceUp] = useState<number[]>([]);
   const [matched, setMatched] = useState<Set<number>>(new Set());
@@ -43,13 +48,13 @@ export function MemoryMatchGame() {
   const resolveTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    const picked = pickN(WORD_LISTS[grade], PAIR_COUNT);
+    const picked = pickN(pool, PAIR_COUNT);
     setEntries(picked);
     setCards(
       shuffle(
         picked.flatMap((entry, pairId): MemoryCard[] => [
           { pairId, kind: "word", text: entry.word },
-          { pairId, kind: "clue", text: entry.hint },
+          { pairId, kind: "clue", text: entry.hint ?? "" },
         ]),
       ),
     );
@@ -57,7 +62,7 @@ export function MemoryMatchGame() {
     setMatched(new Set());
     setAttempts(0);
     window.clearTimeout(resolveTimer.current);
-  }, [grade, roundId]);
+  }, [pool, roundId]);
 
   useEffect(() => () => window.clearTimeout(resolveTimer.current), []);
 
@@ -107,8 +112,12 @@ export function MemoryMatchGame() {
       game={game}
       icon={<Brain className="h-7 w-7" aria-hidden="true" />}
       instructions="Flip two cards at a time to match each word with its clue."
-      grade={grade}
-      onGradeChange={setGrade}
+      picker={<BankPicker bank={bank} banks={banks} onChange={setActive} />}
+      notice={
+        pool.length < PAIR_COUNT ? (
+          <NotEnoughWords need={PAIR_COUNT} requirement="words with hints" />
+        ) : undefined
+      }
       round={round}
       onRestart={() => setRoundId((n) => n + 1)}
     >

@@ -1,5 +1,5 @@
 import { pickN, type Rng } from "./game-utils";
-import type { WordEntry } from "./words";
+import type { BankEntry } from "./banks";
 
 export type Direction = "across" | "down";
 
@@ -29,7 +29,7 @@ const key = (row: number, col: number) => `${row},${col}`;
 const MAX_WORD_LENGTH = 9;
 
 export function generateCrossword(
-  pool: readonly WordEntry[],
+  pool: readonly BankEntry[],
   target = 5,
   rng: Rng = Math.random,
 ): CrosswordPuzzle {
@@ -63,7 +63,7 @@ export function generateCrossword(
     const dirs = new Map<string, Set<Direction>>();
     const placed: typeof best = [];
 
-    const setWord = (entry: WordEntry, row: number, col: number, dir: Direction) => {
+    const setWord = (entry: BankEntry, row: number, col: number, dir: Direction) => {
       for (let i = 0; i < entry.word.length; i++) {
         const r = dir === "down" ? row + i : row;
         const c = dir === "across" ? col + i : col;
@@ -72,7 +72,7 @@ export function generateCrossword(
         set.add(dir);
         dirs.set(key(r, c), set);
       }
-      placed.push({ word: entry.word, hint: entry.hint, row, col, dir });
+      placed.push({ word: entry.word, hint: entry.hint ?? "", row, col, dir });
     };
 
     const canPlace = (word: string, row: number, col: number, dir: Direction) => {

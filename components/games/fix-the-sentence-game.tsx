@@ -3,13 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil } from "lucide-react";
 
+import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
 import { SpellingInput } from "@/components/spelling-input";
 import { Button } from "@/components/ui/button";
-import { useGrade, useSpellingRound } from "@/hooks/use-spelling-round";
+import { useWordBank } from "@/hooks/use-bank";
+import { useGameRound } from "@/hooks/use-spelling-round";
+import { ALL_BUILT_IN_WORDS, type BankEntry } from "@/lib/banks";
 import { makeMisspellings } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
-import { ALL_WORDS, type WordEntry } from "@/lib/words";
 import { cn } from "@/lib/utils";
 
 const game = GAMES.find((g) => g.slug === "fix-the-sentence")!;
@@ -43,8 +45,12 @@ function matchCase(model: string, text: string): string {
 }
 
 export function FixTheSentenceGame() {
-  const [grade, setGrade] = useGrade();
-  const { state, record, advance, restart, roundId } = useSpellingRound(grade);
+  const { bank, banks, setActive } = useWordBank();
+  const pool = useMemo(
+    () => bank.entries.filter((e) => e.sentence),
+    [bank],
+  );
+  const { state, record, advance, restart, roundId } = useGameRound(pool);
   const entry = state?.phase === "playing" ? state.words[state.index] : null;
 
   return (
@@ -52,14 +58,18 @@ export function FixTheSentenceGame() {
       game={game}
       icon={<Pencil className="h-7 w-7" aria-hidden="true" />}
       instructions="One word is spelled wrong. Tap it, then type the correct spelling."
-      grade={grade}
-      onGradeChange={setGrade}
+      picker={<BankPicker bank={bank} banks={banks} onChange={setActive} />}
+      notice={
+        pool.length < 4 ? (
+          <NotEnoughWords need={4} requirement="words with sentences" />
+        ) : undefined
+      }
       round={state}
       onRestart={restart}
     >
       {state && entry && (
         <FixSentenceWord
-          key={`${roundId}-${state.index}-${grade}`}
+          key={`${roundId}-${state.index}-${bank.id}`}
           entry={entry}
           isLast={state.index + 1 === state.words.length}
           onJudged={record}
@@ -76,18 +86,24 @@ function FixSentenceWord({
   onJudged,
   onNext,
 }: {
-  entry: WordEntry;
+  entry: BankEntry;
   isLast: boolean;
   onJudged: (correct: boolean) => void;
   onNext: () => void;
 }) {
   const tokens = useMemo(() => {
-    const parsed = tokenize(entry.sentence, entry.word);
+    const parsed = tokenize(entry.sentence ?? "", entry.word);
     return parsed.map((token) => {
       if (!token.isTarget) return { ...token, shown: token.core };
+      const cautious = !ALL_BUILT_IN_WORDS.has(entry.word.toLowerCase());
       const fake =
-        makeMisspellings(entry.word.toLowerCase(), 1, Math.random, ALL_WORDS)[0] ??
-        entry.word.toLowerCase() + entry.word.slice(-1).toLowerCase();
+        makeMisspellings(
+          entry.word.toLowerCase(),
+          1,
+          Math.random,
+          ALL_BUILT_IN_WORDS,
+          cautious,
+        )[0] ?? entry.word.toLowerCase() + entry.word.slice(-1).toLowerCase();
       return { ...token, shown: matchCase(token.core, fake) };
     });
   }, [entry.sentence, entry.word]);

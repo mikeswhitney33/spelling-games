@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ArrowLeft, Flame, RotateCcw, Star } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { GradePicker } from "@/components/grade-picker";
 import { Tile, tileSizeForWord } from "@/components/tile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,15 +12,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { RoundState } from "@/hooks/use-spelling-round";
 import { starsForScore } from "@/lib/game-utils";
 import { COLOR_STYLES, type GameInfo } from "@/lib/games";
-import type { GradeBand } from "@/lib/words";
 import { cn } from "@/lib/utils";
 
 export function GameFrame({
   game,
   icon,
   instructions,
-  grade,
-  onGradeChange,
+  picker,
+  notice,
   round,
   onRestart,
   children,
@@ -29,8 +27,10 @@ export function GameFrame({
   game: GameInfo;
   icon: ReactNode;
   instructions: string;
-  grade: GradeBand;
-  onGradeChange: (grade: GradeBand) => void;
+  /** The level/word-list selector shown under the header. */
+  picker: ReactNode;
+  /** When set, replaces the play area (e.g. "not enough words" guidance). */
+  notice?: ReactNode;
   round: RoundState | null;
   onRestart: () => void;
   children: ReactNode;
@@ -58,12 +58,14 @@ export function GameFrame({
         </div>
       </div>
 
-      <div className="mt-6">
-        <GradePicker value={grade} onChange={onGradeChange} />
-      </div>
+      <div className="mt-6">{picker}</div>
 
       <div className="mt-6">
-        {round === null ? (
+        {notice ? (
+          <Card className={cn("border-t-8", colors.borderT)}>
+            <CardContent className="py-6">{notice}</CardContent>
+          </Card>
+        ) : round === null ? (
           <Card className={cn("border-t-8", colors.borderT)}>
             <CardContent className="space-y-4 py-10">
               <Skeleton className="mx-auto h-6 w-48" />

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Cog } from "lucide-react";
 
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
+import { GradePicker } from "@/components/grade-picker";
 import { SpellingInput } from "@/components/spelling-input";
 import { Tile, tileSizeForWord } from "@/components/tile";
 import { Button } from "@/components/ui/button";
@@ -26,8 +27,7 @@ export function EndingMachineGame() {
       game={game}
       icon={<Cog className="h-7 w-7" aria-hidden="true" />}
       instructions="Add the ending to the word — watch for letters that double, drop, or change!"
-      grade={grade}
-      onGradeChange={setGrade}
+      picker={<GradePicker value={grade} onChange={setGrade} />}
       round={state}
       onRestart={restart}
     >

@@ -3,20 +3,22 @@
 import { useEffect, useState } from "react";
 import { Lightbulb, Volume2 } from "lucide-react";
 
+import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
 import { SpellingInput } from "@/components/spelling-input";
 import { Button } from "@/components/ui/button";
+import { useWordBank } from "@/hooks/use-bank";
 import { useSpeechSupported } from "@/hooks/use-speech-supported";
-import { useGrade, useSpellingRound } from "@/hooks/use-spelling-round";
+import { useGameRound } from "@/hooks/use-spelling-round";
+import type { BankEntry } from "@/lib/banks";
 import { speak } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
-import type { WordEntry } from "@/lib/words";
 
 const game = GAMES.find((g) => g.slug === "listen-and-spell")!;
 
 export function ListenAndSpellGame() {
-  const [grade, setGrade] = useGrade();
-  const { state, record, advance, restart, roundId } = useSpellingRound(grade);
+  const { bank, banks, setActive } = useWordBank();
+  const { state, record, advance, restart, roundId } = useGameRound(bank.entries);
   const entry = state?.phase === "playing" ? state.words[state.index] : null;
 
   return (
@@ -24,14 +26,18 @@ export function ListenAndSpellGame() {
       game={game}
       icon={<Volume2 className="h-7 w-7" aria-hidden="true" />}
       instructions="Press the speaker, listen closely, then type the word you hear."
-      grade={grade}
-      onGradeChange={setGrade}
+      picker={<BankPicker bank={bank} banks={banks} onChange={setActive} />}
+      notice={
+        bank.entries.length < 4 ? (
+          <NotEnoughWords need={4} requirement="words" />
+        ) : undefined
+      }
       round={state}
       onRestart={restart}
     >
       {state && entry && (
         <ListenWord
-          key={`${roundId}-${state.index}-${grade}`}
+          key={`${roundId}-${state.index}-${bank.id}`}
           entry={entry}
           isLast={state.index + 1 === state.words.length}
           onJudged={record}
@@ -48,7 +54,7 @@ function ListenWord({
   onJudged,
   onNext,
 }: {
-  entry: WordEntry;
+  entry: BankEntry;
   isLast: boolean;
   onJudged: (correct: boolean) => void;
   onNext: () => void;
@@ -129,18 +135,20 @@ function ListenWord({
             >
               Check my spelling
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="font-heading"
-              onClick={() => setShowHint(true)}
-              disabled={showHint}
-            >
-              <Lightbulb aria-hidden="true" /> Clue
-            </Button>
+            {entry.hint && (
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="font-heading"
+                onClick={() => setShowHint(true)}
+                disabled={showHint}
+              >
+                <Lightbulb aria-hidden="true" /> Clue
+              </Button>
+            )}
           </div>
-          {showHint && (
+          {showHint && entry.hint && (
             <p className="mt-4 text-sm text-muted-foreground" role="status">
               Clue: {entry.hint}
             </p>

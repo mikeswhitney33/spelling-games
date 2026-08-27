@@ -44,6 +44,17 @@ Deployed on Vercel — import the repo at [vercel.com/new](https://vercel.com/ne
 
 A fully native SwiftUI version of all twelve games lives in [ios/](ios/) — same word lists, same crayon-and-tile design, plus real on-device text-to-speech. Word data is generated from the TypeScript source of truth with `npm run generate:swift`, so the app and site can't drift. See [docs/APP_STORE.md](docs/APP_STORE.md) for building, signing, and App Store submission (including Kids Category notes).
 
-## Adding words
+## Word lists & custom banks
 
-Word lists live in [lib/words.ts](lib/words.ts) — each entry is a word plus a kid-friendly clue. Add entries to any grade band and every game picks them up.
+Games draw from **word banks**, selectable in every game and managed at `/settings`:
+
+- **Built-in**: the four grade bands (60 words each, all with hints + sentences) plus Sight Words, Commonly Misspelled, and Animals & Nature collections — 340 words total, in [lib/words.ts](lib/words.ts) and [lib/prefilled-banks.ts](lib/prefilled-banks.ts)
+- **Custom**: parents build their own lists (word required; hint and sentence optional) or duplicate a built-in bank as a starting point. Stored in localStorage — no accounts
+- Games adapt: hints unlock Mini Crossword and Memory Match, sentences unlock Fix the Sentence; lists that are too sparse get a friendly pointer to Settings instead of a broken round
+- The Daily Bee and Ending Machine keep the grade-band picker (the daily challenge is a shared global list; the ending machine is rule-based)
+
+After editing built-in lists, regenerate the misspelling safety guard:
+
+```bash
+npm run generate:guard
+```

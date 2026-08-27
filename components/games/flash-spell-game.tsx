@@ -3,30 +3,25 @@
 import { useEffect, useRef, useState } from "react";
 import { Eye, Volume2 } from "lucide-react";
 
+import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
 import { SpellingInput } from "@/components/spelling-input";
 import { Tile, tileSizeForWord } from "@/components/tile";
 import { Button } from "@/components/ui/button";
+import { useWordBank } from "@/hooks/use-bank";
 import { useSpeechSupported } from "@/hooks/use-speech-supported";
-import { useGrade, useSpellingRound } from "@/hooks/use-spelling-round";
-import { speak } from "@/lib/game-utils";
+import { useGameRound } from "@/hooks/use-spelling-round";
+import type { BankEntry } from "@/lib/banks";
+import { flashMsForWord, speak } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
-import type { GradeBand, WordEntry } from "@/lib/words";
 
 const game = GAMES.find((g) => g.slug === "flash-spell")!;
 
-// How long the word stays on screen before hiding (first look / re-look).
-const SHOW_MS: Record<GradeBand, number> = {
-  "k-1": 4000,
-  "2-3": 3500,
-  "4-5": 3000,
-  "6-plus": 3000,
-};
 const RESHOW_MS = 2000;
 
 export function FlashSpellGame() {
-  const [grade, setGrade] = useGrade();
-  const { state, record, advance, restart, roundId } = useSpellingRound(grade);
+  const { bank, banks, setActive } = useWordBank();
+  const { state, record, advance, restart, roundId } = useGameRound(bank.entries);
   const entry = state?.phase === "playing" ? state.words[state.index] : null;
 
   return (
@@ -34,16 +29,20 @@ export function FlashSpellGame() {
       game={game}
       icon={<Eye className="h-7 w-7" aria-hidden="true" />}
       instructions="Look closely while the word is showing — then spell it from memory."
-      grade={grade}
-      onGradeChange={setGrade}
+      picker={<BankPicker bank={bank} banks={banks} onChange={setActive} />}
+      notice={
+        bank.entries.length < 4 ? (
+          <NotEnoughWords need={4} requirement="words" />
+        ) : undefined
+      }
       round={state}
       onRestart={restart}
     >
       {state && entry && (
         <FlashWord
-          key={`${roundId}-${state.index}-${grade}`}
+          key={`${roundId}-${state.index}-${bank.id}`}
           entry={entry}
-          grade={grade}
+          showMs={flashMsForWord(entry.word)}
           isLast={state.index + 1 === state.words.length}
           onJudged={record}
           onNext={advance}
@@ -55,13 +54,13 @@ export function FlashSpellGame() {
 
 export function FlashWord({
   entry,
-  grade,
+  showMs,
   isLast,
   onJudged,
   onNext,
 }: {
-  entry: WordEntry;
-  grade: GradeBand;
+  entry: BankEntry;
+  showMs: number;
   isLast: boolean;
   onJudged: (correct: boolean) => void;
   onNext: () => void;
@@ -77,10 +76,10 @@ export function FlashWord({
 
   useEffect(() => {
     if (phase !== "show") return;
-    const ms = retrying ? RESHOW_MS : SHOW_MS[grade];
+    const ms = retrying ? RESHOW_MS : showMs;
     const timer = window.setTimeout(() => setPhase("type"), ms);
     return () => window.clearTimeout(timer);
-  }, [phase, retrying, grade]);
+  }, [phase, retrying, showMs]);
 
   useEffect(() => {
     if (phase === "type") inputRef.current?.focus();
@@ -109,7 +108,9 @@ export function FlashWord({
 
   return (
     <div className="text-center">
-      <p className="text-sm text-muted-foreground">Clue: {entry.hint}</p>
+      {entry.hint && (
+        <p className="text-sm text-muted-foreground">Clue: {entry.hint}</p>
+      )}
 
       {phase === "show" && (
         <>

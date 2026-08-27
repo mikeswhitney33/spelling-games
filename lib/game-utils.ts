@@ -110,17 +110,49 @@ export function misspellingCandidates(word: string): string[] {
   return [...candidates].filter((c) => c.length >= 2);
 }
 
+/**
+ * Candidates for words outside the built-in vocabulary: only letter doubling,
+ * which almost never lands on a real English word. The dictionary-derived
+ * guard can't cover custom words, so the cautious rules apply instead.
+ */
+export function cautiousMisspellingCandidates(word: string): string[] {
+  const out = new Set<string>();
+  for (let i = 0; i < word.length; i++) {
+    out.add(word.slice(0, i + 1) + word[i] + word.slice(i + 1));
+  }
+  out.delete(word);
+  return [...out];
+}
+
 /** Generate plausible misspellings of a word using common error patterns. */
 export function makeMisspellings(
   word: string,
   count: number,
   rng: Rng = Math.random,
   avoid?: ReadonlySet<string>,
+  cautious = false,
 ): string[] {
-  const pool = misspellingCandidates(word).filter(
+  const candidates = cautious
+    ? cautiousMisspellingCandidates(word)
+    : misspellingCandidates(word);
+  const pool = candidates.filter(
     (c) => !REAL_WORDS.has(c.toLowerCase()) && !avoid?.has(c.toLowerCase()),
   );
   return pickN(pool, count, rng);
+}
+
+// MARK: Word-length heuristics (bank lists have no grade attached)
+
+/** How many letters Missing Letters blanks out. */
+export function blanksForWord(word: string): number {
+  return Math.min(4, Math.max(1, Math.round(word.length / 3)));
+}
+
+/** How long Flash Spell shows the word before hiding it. */
+export function flashMsForWord(word: string): number {
+  if (word.length <= 4) return 4000;
+  if (word.length <= 7) return 3500;
+  return 3000;
 }
 
 /** Choose which letter positions to blank out for Missing Letters. */
