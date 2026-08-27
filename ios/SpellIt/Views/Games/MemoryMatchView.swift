@@ -1,13 +1,10 @@
 import SwiftUI
 
 struct MemoryMatchView: View {
-    @AppStorage("spellit.grade") private var gradeRaw = GradeBand.g23.rawValue
+    @State private var store = BankStore.shared
 
-    private var grade: Binding<GradeBand> {
-        Binding(
-            get: { GradeBand(rawValue: gradeRaw) ?? .g23 },
-            set: { gradeRaw = $0.rawValue },
-        )
+    private var pool: [WordEntry] {
+        store.activeBank.entries.filter { $0.hint != nil }
     }
 
     private struct Card: Identifiable {
@@ -31,10 +28,12 @@ struct MemoryMatchView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
-                GradePicker(grade: grade)
+                BankPickerView()
 
                 VStack(spacing: 14) {
-                    if finished {
+                    if pool.count < Self.pairCount {
+                        NotEnoughWordsView(need: Self.pairCount, requirement: "words with hints")
+                    } else if finished {
                         RoundSummaryView(
                             score: scoreForAttempts,
                             total: Self.pairCount,
@@ -61,7 +60,8 @@ struct MemoryMatchView: View {
         .background(Color.paper)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if cards.isEmpty { startRound() } }
-        .onChange(of: gradeRaw) { startRound() }
+        .onChange(of: store.activeId) { startRound() }
+        .onChange(of: store.revision) { startRound() }
         .onDisappear { resolveTask?.cancel() }
     }
 
@@ -152,11 +152,16 @@ struct MemoryMatchView: View {
 
     private func startRound() {
         resolveTask?.cancel()
-        entries = pickRandom(WordData.words[grade.wrappedValue] ?? [], Self.pairCount)
+        guard pool.count >= Self.pairCount else {
+            entries = []
+            cards = []
+            return
+        }
+        entries = pickRandom(pool, Self.pairCount)
         cards = entries.enumerated().flatMap { pairId, entry in
             [
                 Card(id: pairId * 2, pairId: pairId, isWord: true, text: entry.word),
-                Card(id: pairId * 2 + 1, pairId: pairId, isWord: false, text: entry.hint),
+                Card(id: pairId * 2 + 1, pairId: pairId, isWord: false, text: entry.hint ?? ""),
             ]
         }.shuffled()
         faceUp = []

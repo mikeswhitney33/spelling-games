@@ -1,29 +1,35 @@
 import SwiftUI
 
 struct MissingLettersView: View {
-    @AppStorage("spellit.grade") private var gradeRaw = GradeBand.g23.rawValue
+    @State private var store = BankStore.shared
     @State private var engine = RoundEngine()
 
-    private var grade: Binding<GradeBand> {
-        Binding(
-            get: { GradeBand(rawValue: gradeRaw) ?? .g23 },
-            set: { gradeRaw = $0.rawValue },
-        )
+    private var pool: [WordEntry] {
+        store.activeBank.entries.filter { $0.word.count >= 3 }
     }
 
-    private var pool: [WordEntry] { WordData.words[grade.wrappedValue] ?? [] }
+    private func startRound() {
+        if pool.count >= 4 {
+            engine.start(pool: pool)
+        } else {
+            engine.clear()
+        }
+    }
 
     var body: some View {
         GameScaffold(
             game: .missingLetters,
-            grade: grade,
             engine: engine,
-            onRestart: { engine.start(pool: pool) },
+            onRestart: { startRound() },
         ) {
-            if let entry = engine.current {
+            BankPickerView()
+        } content: {
+            if pool.count < 4 {
+                NotEnoughWordsView(need: 4, requirement: "words of three or more letters")
+            } else if let entry = engine.current {
                 MissingLettersWordView(
                     entry: entry,
-                    grade: grade.wrappedValue,
+                    blanks: GameHeuristics.blanks(for: entry.word),
                     isLast: engine.isLastWord,
                     onJudged: { engine.record(correct: $0) },
                     onNext: { engine.advance() },
@@ -31,14 +37,15 @@ struct MissingLettersView: View {
                 .id("\(engine.roundId)-\(engine.index)")
             }
         }
-        .onAppear { if engine.words.isEmpty { engine.start(pool: pool) } }
-        .onChange(of: gradeRaw) { engine.start(pool: pool) }
+        .onAppear { if engine.words.isEmpty { startRound() } }
+        .onChange(of: store.activeId) { startRound() }
+        .onChange(of: store.revision) { startRound() }
     }
 }
 
 struct MissingLettersWordView: View {
     let entry: WordEntry
-    let grade: GradeBand
+    let blanks: Int
     let isLast: Bool
     let onJudged: (Bool) -> Void
     let onNext: () -> Void
@@ -52,19 +59,17 @@ struct MissingLettersWordView: View {
     @State private var shaking = false
     @State private var shakeTrigger = 0
 
-    private static let blanksPerGrade: [GradeBand: Int] = [
-        .k1: 1, .g23: 2, .g45: 3, .g6plus: 4,
-    ]
-
     private var size: TileSize { TileSize.forWord(entry.word) }
     private var chars: [Character] { Array(entry.word) }
 
     var body: some View {
         VStack(spacing: 14) {
-            Text("Clue: \(entry.hint)")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.mutedInk)
-                .multilineTextAlignment(.center)
+            if let hint = entry.hint {
+                Text("Clue: \(hint)")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.mutedInk)
+                    .multilineTextAlignment(.center)
+            }
 
             FlowLayout(spacing: 6) {
                 ForEach(chars.indices, id: \.self) { pos in
@@ -123,8 +128,8 @@ struct MissingLettersWordView: View {
 
     private func setup() {
         guard positions.isEmpty else { return }
-        let blanks = min(Self.blanksPerGrade[grade] ?? 2, chars.count)
-        positions = Array(chars.indices.shuffled().prefix(blanks)).sorted()
+        let blankCount = min(blanks, chars.count)
+        positions = Array(chars.indices.shuffled().prefix(blankCount)).sorted()
         let needed = positions.map { chars[$0] }
         // Compare lowercased so a needed capital ("F" in February) can't draw
         // its lowercase twin as a distractor.

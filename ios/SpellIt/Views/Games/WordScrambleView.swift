@@ -1,37 +1,44 @@
 import SwiftUI
 
 struct WordScrambleView: View {
-    @AppStorage("spellit.grade") private var gradeRaw = GradeBand.g23.rawValue
+    @State private var store = BankStore.shared
     @State private var engine = RoundEngine()
 
-    private var grade: Binding<GradeBand> {
-        Binding(
-            get: { GradeBand(rawValue: gradeRaw) ?? .g23 },
-            set: { gradeRaw = $0.rawValue },
-        )
+    private var pool: [WordEntry] {
+        store.activeBank.entries.filter { $0.word.count >= 3 }
     }
 
-    private var pool: [WordEntry] { WordData.words[grade.wrappedValue] ?? [] }
+    private func startRound() {
+        if pool.count >= 4 {
+            engine.start(pool: pool)
+        } else {
+            engine.clear()
+        }
+    }
 
     var body: some View {
         GameScaffold(
             game: .wordScramble,
-            grade: grade,
             engine: engine,
-            onRestart: { engine.start(pool: pool) },
+            onRestart: { startRound() },
         ) {
-            if let entry = engine.current {
+            BankPickerView()
+        } content: {
+            if pool.count < 4 {
+                NotEnoughWordsView(need: 4, requirement: "words of three or more letters")
+            } else if let entry = engine.current {
                 ScrambleWordView(
                     entry: entry,
                     isLast: engine.isLastWord,
                     onJudged: { engine.record(correct: $0) },
                     onNext: { engine.advance() },
                 )
-                .id("\(engine.roundId)-\(engine.index)")
+                .id("\(engine.roundId)-\(engine.index)-\(store.activeId)")
             }
         }
-        .onAppear { if engine.words.isEmpty { engine.start(pool: pool) } }
-        .onChange(of: gradeRaw) { engine.start(pool: pool) }
+        .onAppear { if engine.words.isEmpty { startRound() } }
+        .onChange(of: store.activeId) { startRound() }
+        .onChange(of: store.revision) { startRound() }
     }
 }
 
@@ -62,10 +69,12 @@ struct ScrambleWordView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Text("Clue: \(entry.hint)")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.mutedInk)
-                .multilineTextAlignment(.center)
+            if let hint = entry.hint {
+                Text("Clue: \(hint)")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.mutedInk)
+                    .multilineTextAlignment(.center)
+            }
 
             // Answer slots
             FlowLayout(spacing: 6) {

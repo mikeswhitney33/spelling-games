@@ -1,13 +1,10 @@
 import SwiftUI
 
 struct WordSearchView: View {
-    @AppStorage("spellit.grade") private var gradeRaw = GradeBand.g23.rawValue
+    @State private var store = BankStore.shared
 
-    private var grade: Binding<GradeBand> {
-        Binding(
-            get: { GradeBand(rawValue: gradeRaw) ?? .g23 },
-            set: { gradeRaw = $0.rawValue },
-        )
+    private var pool: [WordEntry] {
+        store.activeBank.entries.filter { $0.word.count >= 3 && $0.word.count <= 12 }
     }
 
     @State private var puzzle: WordSearchPuzzle?
@@ -25,10 +22,12 @@ struct WordSearchView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
-                GradePicker(grade: grade)
+                BankPickerView()
 
                 VStack(spacing: 14) {
-                    if let puzzle {
+                    if pool.count < 5 {
+                        NotEnoughWordsView(need: 5, requirement: "words of 3\u{2013}12 letters")
+                    } else if let puzzle {
                         if finished {
                             RoundSummaryView(
                                 score: puzzle.placements.count,
@@ -56,7 +55,8 @@ struct WordSearchView: View {
         .background(Color.paper)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if puzzle == nil { startRound() } }
-        .onChange(of: gradeRaw) { startRound() }
+        .onChange(of: store.activeId) { startRound() }
+        .onChange(of: store.revision) { startRound() }
         .onDisappear { flashTask?.cancel() }
     }
 
@@ -158,10 +158,11 @@ struct WordSearchView: View {
 
     private func startRound() {
         flashTask?.cancel()
-        puzzle = WordSearchGenerator.generate(
-            pool: WordData.words[grade.wrappedValue] ?? [],
-            grade: grade.wrappedValue,
-        )
+        guard pool.count >= 5 else {
+            puzzle = nil
+            return
+        }
+        puzzle = WordSearchGenerator.generate(pool: pool)
         found = []
         firstTap = nil
         flashCells = []

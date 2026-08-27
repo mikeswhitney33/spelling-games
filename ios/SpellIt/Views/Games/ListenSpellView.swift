@@ -1,37 +1,44 @@
 import SwiftUI
 
 struct ListenSpellView: View {
-    @AppStorage("spellit.grade") private var gradeRaw = GradeBand.g23.rawValue
+    @State private var store = BankStore.shared
     @State private var engine = RoundEngine()
 
-    private var grade: Binding<GradeBand> {
-        Binding(
-            get: { GradeBand(rawValue: gradeRaw) ?? .g23 },
-            set: { gradeRaw = $0.rawValue },
-        )
+    private var pool: [WordEntry] {
+        store.activeBank.entries
     }
 
-    private var pool: [WordEntry] { WordData.words[grade.wrappedValue] ?? [] }
+    private func startRound() {
+        if pool.count >= 4 {
+            engine.start(pool: pool)
+        } else {
+            engine.clear()
+        }
+    }
 
     var body: some View {
         GameScaffold(
             game: .listenAndSpell,
-            grade: grade,
             engine: engine,
-            onRestart: { engine.start(pool: pool) },
+            onRestart: { startRound() },
         ) {
-            if let entry = engine.current {
+            BankPickerView()
+        } content: {
+            if pool.count < 4 {
+                NotEnoughWordsView(need: 4, requirement: "words")
+            } else if let entry = engine.current {
                 ListenWordView(
                     entry: entry,
                     isLast: engine.isLastWord,
                     onJudged: { engine.record(correct: $0) },
                     onNext: { engine.advance() },
                 )
-                .id("\(engine.roundId)-\(engine.index)")
+                .id("\(engine.roundId)-\(engine.index)-\(store.activeId)")
             }
         }
-        .onAppear { if engine.words.isEmpty { engine.start(pool: pool) } }
-        .onChange(of: gradeRaw) { engine.start(pool: pool) }
+        .onAppear { if engine.words.isEmpty { startRound() } }
+        .onChange(of: store.activeId) { startRound() }
+        .onChange(of: store.revision) { startRound() }
     }
 }
 
@@ -91,17 +98,19 @@ struct ListenWordView: View {
                     Button("Check my spelling", action: submit)
                         .buttonStyle(ChunkyButtonStyle())
                         .disabled(typed.trimmingCharacters(in: .whitespaces).isEmpty)
-                    Button {
-                        showHint = true
-                    } label: {
-                        Label("Clue", systemImage: "lightbulb.fill")
+                    if entry.hint != nil {
+                        Button {
+                            showHint = true
+                        } label: {
+                            Label("Clue", systemImage: "lightbulb.fill")
+                        }
+                        .buttonStyle(ChunkyButtonStyle(bordered: true))
+                        .disabled(showHint)
                     }
-                    .buttonStyle(ChunkyButtonStyle(bordered: true))
-                    .disabled(showHint)
                 }
 
-                if showHint {
-                    Text("Clue: \(entry.hint)")
+                if showHint, let hint = entry.hint {
+                    Text("Clue: \(hint)")
                         .font(.system(size: 14))
                         .foregroundStyle(Color.mutedInk)
                         .multilineTextAlignment(.center)

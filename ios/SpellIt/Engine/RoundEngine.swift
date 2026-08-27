@@ -48,6 +48,13 @@ final class RoundEngine {
         roundId += 1
     }
 
+    /// Empty the round entirely (e.g. the active bank became too small),
+    /// hiding the score bar and any stale summary.
+    func clear() {
+        words = []
+        resetProgress()
+    }
+
     func record(correct: Bool) {
         guard phase == .playing else { return }
         if correct {

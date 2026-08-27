@@ -93,11 +93,12 @@ struct DailyBeeView: View {
     var body: some View {
         GameScaffold(
             game: .dailyBee,
-            grade: grade,
             engine: engine,
             summaryText: summaryText,
             onRestart: startRound,
         ) {
+            GradePicker(grade: grade)
+        } content: {
             if let entry = engine.current,
                let mechanic = mechanicByWord[entry.word] {
                 VStack(spacing: 12) {
@@ -168,14 +169,14 @@ struct DailyBeeView: View {
             ScrambleWordView(entry: entry, isLast: props.isLast, onJudged: props.onJudged, onNext: props.onNext)
         case .missing:
             MissingLettersWordView(
-                entry: entry, grade: grade.wrappedValue,
+                entry: entry, blanks: GameHeuristics.blanks(for: entry.word),
                 isLast: props.isLast, onJudged: props.onJudged, onNext: props.onNext,
             )
         case .spot:
             SpotWordChallengeView(entry: entry, isLast: props.isLast, onJudged: props.onJudged, onNext: props.onNext)
         case .flash:
             FlashWordView(
-                entry: entry, grade: grade.wrappedValue,
+                entry: entry, showSeconds: GameHeuristics.flashSeconds(for: entry.word),
                 isLast: props.isLast, onJudged: props.onJudged, onNext: props.onNext,
             )
         }
