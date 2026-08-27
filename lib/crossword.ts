@@ -67,7 +67,9 @@ export function generateCrossword(
       for (let i = 0; i < entry.word.length; i++) {
         const r = dir === "down" ? row + i : row;
         const c = dir === "across" ? col + i : col;
-        grid.set(key(r, c), entry.word[i]);
+        // Store lowercase so capitalized entries ("February") still cross
+        // lowercase words sharing the letter.
+        grid.set(key(r, c), entry.word[i].toLowerCase());
         const set = dirs.get(key(r, c)) ?? new Set<Direction>();
         set.add(dir);
         dirs.set(key(r, c), set);
@@ -87,7 +89,7 @@ export function generateCrossword(
         const c = col + dc * i;
         const existing = grid.get(key(r, c));
         if (existing !== undefined) {
-          if (existing !== word[i]) return false;
+          if (existing !== word[i].toLowerCase()) return false;
           // Only perpendicular crossings — never ride along a same-direction word.
           if (dirs.get(key(r, c))?.has(dir)) return false;
           crossings++;
@@ -108,7 +110,7 @@ export function generateCrossword(
       for (const p of placed) {
         for (let i = 0; i < p.word.length; i++) {
           for (let j = 0; j < entry.word.length; j++) {
-            if (p.word[i] !== entry.word[j]) continue;
+            if (p.word[i].toLowerCase() !== entry.word[j].toLowerCase()) continue;
             const option =
               p.dir === "across"
                 ? { row: p.row - j, col: p.col + i, dir: "down" as const }
