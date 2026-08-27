@@ -11,6 +11,8 @@ struct MissingLettersView: View {
     private func startRound() {
         if pool.count >= 4 {
             engine.start(pool: pool)
+        } else {
+            engine.clear()
         }
     }
 
@@ -37,6 +39,7 @@ struct MissingLettersView: View {
         }
         .onAppear { if engine.words.isEmpty { startRound() } }
         .onChange(of: store.activeId) { startRound() }
+        .onChange(of: store.revision) { startRound() }
     }
 }
 

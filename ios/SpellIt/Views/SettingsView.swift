@@ -54,7 +54,7 @@ struct SettingsView: View {
     private func bankRow(_ bank: WordBank) -> some View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(bank.name)
+                Text(bank.displayName)
                     .font(.heading(15, weight: .semibold))
                 Text("\(bank.entries.count) words\(bank.blurb.isEmpty ? "" : " · \(bank.blurb)")")
                     .font(.system(size: 12))
@@ -188,7 +188,7 @@ struct BankEditorView: View {
                 }
             }
         }
-        .navigationTitle(bank?.name ?? "List")
+        .navigationTitle(bank?.displayName ?? "List")
         .navigationBarTitleDisplayMode(.inline)
     }
 

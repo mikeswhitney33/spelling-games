@@ -60,6 +60,11 @@ struct WordBank: Hashable, Identifiable {
     var blurb: String
     let builtIn: Bool
     var entries: [WordEntry]
+
+    /// Never-empty title, even if a custom list was renamed to nothing.
+    var displayName: String {
+        name.trimmingCharacters(in: .whitespaces).isEmpty ? "My list" : name
+    }
 }
 
 struct EndingTask: Hashable, Identifiable {

@@ -77,6 +77,7 @@ struct MiniCrosswordView: View {
         }
         .onAppear { if puzzle == nil { startRound() } }
         .onChange(of: store.activeId) { startRound() }
+        .onChange(of: store.revision) { startRound() }
         .onDisappear { shakeTask?.cancel() }
     }
 

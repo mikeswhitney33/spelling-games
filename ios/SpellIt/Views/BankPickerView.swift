@@ -26,7 +26,7 @@ struct BankPickerView: View {
                     }
                 } label: {
                     HStack(spacing: 6) {
-                        Text(store.activeBank.name)
+                        Text(store.activeBank.displayName)
                             .font(.heading(15, weight: .medium))
                             .lineLimit(1)
                         Image(systemName: "chevron.up.chevron.down")
@@ -70,9 +70,9 @@ struct BankPickerView: View {
                 store.setActive(bank.id)
             } label: {
                 if bank.id == store.activeId {
-                    Label(bank.name, systemImage: "checkmark")
+                    Label(bank.displayName, systemImage: "checkmark")
                 } else {
-                    Text(bank.name)
+                    Text(bank.displayName)
                 }
             }
         }

@@ -56,6 +56,7 @@ struct WordSearchView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if puzzle == nil { startRound() } }
         .onChange(of: store.activeId) { startRound() }
+        .onChange(of: store.revision) { startRound() }
         .onDisappear { flashTask?.cancel() }
     }
 

@@ -18,6 +18,8 @@ final class BankStore {
 
     private(set) var customBanks: [WordBank] = []
     private(set) var activeId: String = BankStore.defaultBankId
+    /// Bumps on any custom-bank mutation so mid-round edits re-deal games.
+    private(set) var revision = 0
 
     private init() {
         if let data = UserDefaults.standard.data(forKey: Self.customKey),
@@ -54,6 +56,7 @@ final class BankStore {
     }
 
     private func persist() {
+        revision += 1
         let stored = customBanks.map {
             StoredBank(id: $0.id, name: $0.name, entries: $0.entries)
         }

@@ -61,6 +61,7 @@ struct MemoryMatchView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if cards.isEmpty { startRound() } }
         .onChange(of: store.activeId) { startRound() }
+        .onChange(of: store.revision) { startRound() }
         .onDisappear { resolveTask?.cancel() }
     }
 
