@@ -87,15 +87,22 @@ enum Misspell {
     }
 
     static func make(for word: String, count: Int) -> [String] {
-        // Keep the original casing so "February" yields "Febuary", not
-        // "febuary" — otherwise capitalization gives the real answer away.
-        // Custom words fall back to the cautious rules.
-        let cautious = !allListWords.contains(word.lowercased())
-        let raw = cautious ? cautiousCandidates(for: word) : candidates(for: word)
+        // Generate from the lowercased word so the lowercase-keyed swap tables
+        // apply to every letter, then restore the leading capital so the real
+        // answer's casing doesn't give it away. Custom words the dictionary
+        // guard can't vet fall back to the cautious rules.
+        let lower = word.lowercased()
+        let cautious = !allListWords.contains(lower)
+        let raw = cautious ? cautiousCandidates(for: lower) : candidates(for: lower)
         let pool = raw.filter {
-            !WordData.realWordGuard.contains($0.lowercased())
-                && !allListWords.contains($0.lowercased())
+            !WordData.realWordGuard.contains($0) && !allListWords.contains($0)
         }
-        return Array(pool.shuffled().prefix(count))
+        return pool.shuffled().prefix(count).map { matchCase(model: word, text: $0) }
     }
+}
+
+/// Copy the model word's leading capital (if any) onto text.
+func matchCase(model: String, text: String) -> String {
+    guard let first = model.first, first.isUppercase, let start = text.first else { return text }
+    return String(start).uppercased() + text.dropFirst()
 }
