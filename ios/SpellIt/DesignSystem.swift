@@ -134,6 +134,8 @@ struct ChunkyButtonStyle: ButtonStyle {
     var foreground: Color = .white
     var bordered = false
 
+    @Environment(\.isEnabled) private var isEnabled
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.heading(16, weight: .semibold))
@@ -153,6 +155,7 @@ struct ChunkyButtonStyle: ButtonStyle {
                 }
             )
             .foregroundStyle(bordered ? Color.ink : foreground)
+            .opacity(isEnabled ? 1 : 0.4)
             .offset(y: configuration.isPressed ? 3 : 0)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }

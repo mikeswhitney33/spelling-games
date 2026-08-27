@@ -21,7 +21,10 @@ struct MiniCrosswordView: View {
     @State private var shakingIndex: Int?
     @State private var shakeTask: Task<Void, Never>?
     @FocusState private var keyboardFocused: Bool
-    @State private var keyboardBuffer = ""
+    @State private var keyboardBuffer = " "
+    /// Set right before programmatic buffer writes so onChange can tell them
+    /// apart from real typing.
+    @State private var programmaticBuffer: String?
 
     private var finished: Bool {
         guard let puzzle else { return false }
@@ -275,7 +278,7 @@ struct MiniCrosswordView: View {
         selected = 0
         activeCell = puzzle?.placements.first?.cells.first
         shakingIndex = nil
-        keyboardBuffer = ""
+        resetBuffer()
     }
 
     private func tapCell(_ cell: GridCell, in puzzle: CrosswordPuzzle) {
@@ -300,14 +303,29 @@ struct MiniCrosswordView: View {
         keyboardFocused = true
     }
 
+    /// Reset the hidden field to a single sentinel space, so a real backspace
+    /// (which deletes the space) is observable as a change to "".
+    private func resetBuffer() {
+        programmaticBuffer = " "
+        keyboardBuffer = " "
+    }
+
     private func handleTyped(_ value: String, in puzzle: CrosswordPuzzle) {
-        defer { keyboardBuffer = "" }
+        if value == programmaticBuffer {
+            programmaticBuffer = nil
+            return
+        }
+        defer { resetBuffer() }
         guard let cell = activeCell else { return }
         if value.isEmpty {
-            // Backspace on the empty hidden field: clear and step back.
-            moveActive(from: cell, delta: -1, in: puzzle)
-            if let prev = activeCell, !isLocked(prev, in: puzzle) {
-                letters[prev] = nil
+            // The sentinel space was deleted: a real backspace.
+            if !isLocked(cell, in: puzzle), letters[cell] != nil {
+                letters[cell] = nil
+            } else {
+                moveActive(from: cell, delta: -1, in: puzzle)
+                if let prev = activeCell, !isLocked(prev, in: puzzle) {
+                    letters[prev] = nil
+                }
             }
             return
         }
@@ -339,7 +357,7 @@ struct MiniCrosswordView: View {
             let filled = cells.compactMap { letters[$0] }
             guard filled.count == cells.count else { continue }
             let attempt = String(filled)
-            if attempt == p.word {
+            if attempt == p.word.lowercased() {
                 solved.insert(index)
                 if results[index] == nil { results[index] = true }
                 if solved.count == puzzle.placements.count { keyboardFocused = false }

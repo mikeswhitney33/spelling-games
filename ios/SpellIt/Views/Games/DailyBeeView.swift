@@ -25,8 +25,16 @@ struct DailyStreak: Codable {
 enum DailyStore {
     private static let key = "spellit.daily"
 
+    /// Always Gregorian so the daily seed matches the website (a device set
+    /// to e.g. the Buddhist calendar would otherwise hash a different year).
+    private static var gregorian: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        return calendar
+    }
+
     static func formatDate(_ date: Date = Date()) -> String {
-        let parts = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        let parts = gregorian.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
 
@@ -42,7 +50,7 @@ enum DailyStore {
     static func save(today: String) -> DailyStreak {
         var data = read()
         guard data.lastPlayed != today else { return data }
-        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: parse(today))
+        let yesterday = gregorian.date(byAdding: .day, value: -1, to: parse(today))
             .map(formatDate) ?? ""
         data.streak = data.lastPlayed == yesterday ? data.streak + 1 : 1
         data.best = max(data.best, data.streak)
@@ -62,7 +70,7 @@ enum DailyStore {
             components.day = parts[2]
             components.hour = 12
         }
-        return Calendar.current.date(from: components) ?? Date()
+        return gregorian.date(from: components) ?? Date()
     }
 }
 

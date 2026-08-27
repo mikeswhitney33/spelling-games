@@ -66,8 +66,11 @@ enum Misspell {
     )
 
     static func make(for word: String, count: Int) -> [String] {
-        let pool = candidates(for: word.lowercased()).filter {
-            !WordData.realWordGuard.contains($0) && !allListWords.contains($0)
+        // Keep the original casing so "February" yields "Febuary", not
+        // "febuary" — otherwise capitalization gives the real answer away.
+        let pool = candidates(for: word).filter {
+            !WordData.realWordGuard.contains($0.lowercased())
+                && !allListWords.contains($0.lowercased())
         }
         return Array(pool.shuffled().prefix(count))
     }

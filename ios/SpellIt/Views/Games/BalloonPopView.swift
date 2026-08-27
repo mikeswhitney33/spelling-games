@@ -89,6 +89,9 @@ struct BalloonWordView: View {
 
     private var size: TileSize { TileSize.forWord(entry.word) }
     private var balloonsLeft: Int { Self.maxMisses - misses }
+    /// Guesses are lowercase a–z; compare against the lowercased word so
+    /// capitalized entries like "February" stay winnable.
+    private var word: String { entry.word.lowercased() }
 
     var body: some View {
         VStack(spacing: 14) {
@@ -106,7 +109,7 @@ struct BalloonWordView: View {
             .accessibilityLabel("\(balloonsLeft) of \(Self.maxMisses) balloons left")
 
             FlowLayout(spacing: 6) {
-                ForEach(Array(entry.word.enumerated()), id: \.offset) { _, letter in
+                ForEach(Array(word.enumerated()), id: \.offset) { _, letter in
                     let revealed = guessed.contains(letter) || outcome != nil
                     let wasGuessed = guessed.contains(letter)
                     TileView(
@@ -126,7 +129,7 @@ struct BalloonWordView: View {
                 FlowLayout(spacing: 6) {
                     ForEach(Self.alphabet, id: \.self) { letter in
                         let used = guessed.contains(letter)
-                        let hit = used && entry.word.contains(letter)
+                        let hit = used && word.contains(letter)
                         TileButton(
                             letter: String(letter),
                             size: .sm,
@@ -155,8 +158,8 @@ struct BalloonWordView: View {
     private func guess(_ letter: Character) {
         guard outcome == nil, !guessed.contains(letter) else { return }
         guessed.insert(letter)
-        if entry.word.contains(letter) {
-            if entry.word.allSatisfy({ guessed.contains($0) }) {
+        if word.contains(letter) {
+            if word.allSatisfy({ guessed.contains($0) }) {
                 outcome = true
                 onJudged(true)
             }
