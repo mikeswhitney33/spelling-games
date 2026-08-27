@@ -63,12 +63,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </span>
               <span className="sr-only">Spell It! home</span>
             </Link>
-            <Link
-              href="/#games"
-              className="font-heading text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              All games
-            </Link>
+            <nav className="flex items-center gap-4">
+              <Link
+                href="/#games"
+                className="font-heading text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                All games
+              </Link>
+              <Link
+                href="/settings"
+                className="font-heading text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Word lists
+              </Link>
+            </nav>
           </div>
         </header>
         <main className="flex-1">{children}</main>

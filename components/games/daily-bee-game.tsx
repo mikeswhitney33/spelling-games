@@ -8,8 +8,14 @@ import { MissingLettersWord } from "@/components/games/missing-letters-game";
 import { SpotWord } from "@/components/games/spot-the-word-game";
 import { ScrambleWord } from "@/components/games/word-scramble-game";
 import { GameFrame } from "@/components/game-frame";
+import { GradePicker } from "@/components/grade-picker";
 import { useGameRound, useGrade } from "@/hooks/use-spelling-round";
-import { mulberry32, pickN } from "@/lib/game-utils";
+import {
+  blanksForWord,
+  flashMsForWord,
+  mulberry32,
+  pickN,
+} from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
 import { WORD_LISTS, type WordEntry } from "@/lib/words";
 
@@ -177,8 +183,7 @@ export function DailyBeeGame() {
       game={game}
       icon={<Flame className="h-7 w-7" aria-hidden="true" />}
       instructions="Ten words, a mix of every challenge — one fresh round each day."
-      grade={grade}
-      onGradeChange={setGrade}
+      picker={<GradePicker value={grade} onChange={setGrade} />}
       round={round}
       onRestart={restart}
     >
@@ -214,7 +219,7 @@ export function DailyBeeGame() {
           {mechanic === "missing" && (
             <MissingLettersWord
               key={`${roundId}-${state.index}-${grade}-missing`}
-              grade={grade}
+              blanks={blanksForWord(entry.word)}
               {...wordProps}
             />
           )}
@@ -227,7 +232,7 @@ export function DailyBeeGame() {
           {mechanic === "flash" && (
             <FlashWord
               key={`${roundId}-${state.index}-${grade}-flash`}
-              grade={grade}
+              showMs={flashMsForWord(entry.word)}
               {...wordProps}
             />
           )}

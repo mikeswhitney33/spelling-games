@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { pickN, ROUND_LENGTH } from "@/lib/game-utils";
 import { WORD_LISTS, type GradeBand, type WordEntry } from "@/lib/words";
 
-/** The minimum shape a round item needs: the answer word and a hint/rule. */
+/** The minimum shape a round item needs: the answer word, optionally a hint. */
 export interface RoundItem {
   word: string;
-  hint: string;
+  hint?: string;
 }
 
 export interface RoundState<T extends RoundItem = RoundItem> {

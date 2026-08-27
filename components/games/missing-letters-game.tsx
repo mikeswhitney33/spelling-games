@@ -3,27 +3,32 @@
 import { useMemo, useState } from "react";
 import { Puzzle, Volume2 } from "lucide-react";
 
+import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
 import { Tile, TileButton, tileSizeForWord } from "@/components/tile";
 import { Button } from "@/components/ui/button";
-import { useGrade, useSpellingRound } from "@/hooks/use-spelling-round";
-import { pickBlankPositions, pickN, shuffle, speak } from "@/lib/game-utils";
+import { useWordBank } from "@/hooks/use-bank";
+import { useGameRound } from "@/hooks/use-spelling-round";
+import type { BankEntry } from "@/lib/banks";
+import {
+  blanksForWord,
+  pickBlankPositions,
+  pickN,
+  shuffle,
+  speak,
+} from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
-import type { GradeBand, WordEntry } from "@/lib/words";
 import { cn } from "@/lib/utils";
 
 const game = GAMES.find((g) => g.slug === "missing-letters")!;
 
-const BLANKS_PER_GRADE: Record<GradeBand, number> = {
-  "k-1": 1,
-  "2-3": 2,
-  "4-5": 3,
-  "6-plus": 4,
-};
-
 export function MissingLettersGame() {
-  const [grade, setGrade] = useGrade();
-  const { state, record, advance, restart, roundId } = useSpellingRound(grade);
+  const { bank, banks, setActive } = useWordBank();
+  const pool = useMemo(
+    () => bank.entries.filter((e) => e.word.length >= 3),
+    [bank],
+  );
+  const { state, record, advance, restart, roundId } = useGameRound(pool);
   const entry = state?.phase === "playing" ? state.words[state.index] : null;
 
   return (
@@ -31,16 +36,20 @@ export function MissingLettersGame() {
       game={game}
       icon={<Puzzle className="h-7 w-7" aria-hidden="true" />}
       instructions="Some letters are missing. Tap letters from the bank to finish the word."
-      grade={grade}
-      onGradeChange={setGrade}
+      picker={<BankPicker bank={bank} banks={banks} onChange={setActive} />}
+      notice={
+        pool.length < 4 ? (
+          <NotEnoughWords need={4} requirement="words of three or more letters" />
+        ) : undefined
+      }
       round={state}
       onRestart={restart}
     >
       {state && entry && (
         <MissingLettersWord
-          key={`${roundId}-${state.index}-${grade}`}
+          key={`${roundId}-${state.index}-${bank.id}`}
           entry={entry}
-          grade={grade}
+          blanks={blanksForWord(entry.word)}
           isLast={state.index + 1 === state.words.length}
           onJudged={record}
           onNext={advance}
@@ -52,20 +61,20 @@ export function MissingLettersGame() {
 
 export function MissingLettersWord({
   entry,
-  grade,
+  blanks,
   isLast,
   onJudged,
   onNext,
 }: {
-  entry: WordEntry;
-  grade: GradeBand;
+  entry: BankEntry;
+  blanks: number;
   isLast: boolean;
   onJudged: (correct: boolean) => void;
   onNext: () => void;
 }) {
   const size = tileSizeForWord(entry.word);
   const setup = useMemo(() => {
-    const positions = pickBlankPositions(entry.word, BLANKS_PER_GRADE[grade]);
+    const positions = pickBlankPositions(entry.word, blanks);
     const needed = positions.map((p) => entry.word[p]);
     // Compare lowercased so a needed capital ("F" in February) can't draw
     // its lowercase twin as a distractor.
@@ -75,7 +84,7 @@ export function MissingLettersWord({
       3,
     );
     return { positions, bank: shuffle([...needed, ...distractors]) };
-  }, [entry.word, grade]);
+  }, [entry.word, blanks]);
 
   // For each blank, the index into the bank of the letter placed there.
   const [placed, setPlaced] = useState<(number | null)[]>(() =>
@@ -125,7 +134,9 @@ export function MissingLettersWord({
 
   return (
     <div className="text-center">
-      <p className="text-sm text-muted-foreground">Clue: {entry.hint}</p>
+      {entry.hint && (
+        <p className="text-sm text-muted-foreground">Clue: {entry.hint}</p>
+      )}
 
       {/* The word with gaps */}
       <div

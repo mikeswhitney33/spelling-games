@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 import { PartyPopper, Volume2 } from "lucide-react";
 
+import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
 import { Tile, TileButton, tileSizeForWord } from "@/components/tile";
 import { Button } from "@/components/ui/button";
-import { useGrade, useSpellingRound } from "@/hooks/use-spelling-round";
+import { useWordBank } from "@/hooks/use-bank";
+import { useGameRound } from "@/hooks/use-spelling-round";
+import type { BankEntry } from "@/lib/banks";
 import { speak } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
-import type { WordEntry } from "@/lib/words";
 import { cn } from "@/lib/utils";
 
 const game = GAMES.find((g) => g.slug === "balloon-pop")!;
@@ -26,8 +28,8 @@ const BALLOON_COLORS = [
 ];
 
 export function BalloonPopGame() {
-  const [grade, setGrade] = useGrade();
-  const { state, record, advance, restart, roundId } = useSpellingRound(grade);
+  const { bank, banks, setActive } = useWordBank();
+  const { state, record, advance, restart, roundId } = useGameRound(bank.entries);
   const entry = state?.phase === "playing" ? state.words[state.index] : null;
 
   return (
@@ -35,14 +37,18 @@ export function BalloonPopGame() {
       game={game}
       icon={<PartyPopper className="h-7 w-7" aria-hidden="true" />}
       instructions="Pick letters to spell the hidden word — every wrong guess pops a balloon."
-      grade={grade}
-      onGradeChange={setGrade}
+      picker={<BankPicker bank={bank} banks={banks} onChange={setActive} />}
+      notice={
+        bank.entries.length < 4 ? (
+          <NotEnoughWords need={4} requirement="words" />
+        ) : undefined
+      }
       round={state}
       onRestart={restart}
     >
       {state && entry && (
         <BalloonWord
-          key={`${roundId}-${state.index}-${grade}`}
+          key={`${roundId}-${state.index}-${bank.id}`}
           entry={entry}
           isLast={state.index + 1 === state.words.length}
           onJudged={record}
@@ -110,7 +116,7 @@ function BalloonWord({
   onJudged,
   onNext,
 }: {
-  entry: WordEntry;
+  entry: BankEntry;
   isLast: boolean;
   onJudged: (correct: boolean) => void;
   onNext: () => void;
@@ -162,7 +168,9 @@ function BalloonWord({
 
   return (
     <div className="text-center">
-      <p className="text-sm text-muted-foreground">Clue: {entry.hint}</p>
+      {entry.hint && (
+        <p className="text-sm text-muted-foreground">Clue: {entry.hint}</p>
+      )}
 
       {/* Balloons */}
       <div

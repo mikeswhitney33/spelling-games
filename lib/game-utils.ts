@@ -110,17 +110,62 @@ export function misspellingCandidates(word: string): string[] {
   return [...candidates].filter((c) => c.length >= 2);
 }
 
+/**
+ * Candidates for words outside the built-in vocabulary, where the
+ * dictionary-derived guard can't help. General letter doubling lands on real
+ * words exactly where spelling lists live (hoping→hopping, diner→dinner), so
+ * only edits that essentially never produce English words are used: tripling
+ * an existing double letter, doubling the first letter, and doubling the last
+ * letter of longer words. May yield fewer than three fakes — callers cope.
+ */
+export function cautiousMisspellingCandidates(word: string): string[] {
+  const out = new Set<string>();
+  // Triple an existing double letter (dinner → dinnner)
+  for (let i = 0; i < word.length - 1; i++) {
+    if (word[i] === word[i + 1]) {
+      out.add(word.slice(0, i + 1) + word[i] + word.slice(i + 1));
+    }
+  }
+  // Double the first letter (hoping → hhoping)
+  out.add(word[0] + word);
+  // Double the last letter of longer words (hoping → hopingg;
+  // skipped for short words where this can be real: in → inn, ad → add)
+  if (word.length >= 4) {
+    out.add(word + word[word.length - 1]);
+  }
+  out.delete(word);
+  return [...out];
+}
+
 /** Generate plausible misspellings of a word using common error patterns. */
 export function makeMisspellings(
   word: string,
   count: number,
   rng: Rng = Math.random,
   avoid?: ReadonlySet<string>,
+  cautious = false,
 ): string[] {
-  const pool = misspellingCandidates(word).filter(
+  const candidates = cautious
+    ? cautiousMisspellingCandidates(word)
+    : misspellingCandidates(word);
+  const pool = candidates.filter(
     (c) => !REAL_WORDS.has(c.toLowerCase()) && !avoid?.has(c.toLowerCase()),
   );
   return pickN(pool, count, rng);
+}
+
+// MARK: Word-length heuristics (bank lists have no grade attached)
+
+/** How many letters Missing Letters blanks out. */
+export function blanksForWord(word: string): number {
+  return Math.min(4, Math.max(1, Math.round(word.length / 3)));
+}
+
+/** How long Flash Spell shows the word before hiding it. */
+export function flashMsForWord(word: string): number {
+  if (word.length <= 4) return 4000;
+  if (word.length <= 7) return 3500;
+  return 3000;
 }
 
 /** Copy the model word's leading capital (if any) onto text. */

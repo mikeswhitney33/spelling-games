@@ -3,12 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Compass } from "lucide-react";
 
+import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { GameFrame } from "@/components/game-frame";
-import { useGrade } from "@/hooks/use-spelling-round";
+import { useWordBank } from "@/hooks/use-bank";
 import type { RoundState } from "@/hooks/use-spelling-round";
-import { generateWordSearch, type WordSearchPuzzle } from "@/lib/word-search";
+import {
+  WORD_SEARCH_MAX_LENGTH,
+  generateWordSearch,
+  type WordSearchPuzzle,
+} from "@/lib/word-search";
 import { GAMES } from "@/lib/games";
-import { WORD_LISTS } from "@/lib/words";
 import { cn } from "@/lib/utils";
 
 const game = GAMES.find((g) => g.slug === "word-search")!;
@@ -37,7 +41,14 @@ function lineBetween(a: string, b: string): string[] | null {
 }
 
 export function WordSearchGame() {
-  const [grade, setGrade] = useGrade();
+  const { bank, banks, setActive } = useWordBank();
+  const pool = useMemo(
+    () =>
+      bank.entries.filter(
+        (e) => e.word.length >= 3 && e.word.length <= WORD_SEARCH_MAX_LENGTH,
+      ),
+    [bank],
+  );
   const [roundId, setRoundId] = useState(0);
   const [puzzle, setPuzzle] = useState<WordSearchPuzzle | null>(null);
   const [found, setFound] = useState<boolean[]>([]);
@@ -46,13 +57,13 @@ export function WordSearchGame() {
   const flashTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    const next = generateWordSearch(WORD_LISTS[grade], grade);
+    const next = generateWordSearch(pool);
     setPuzzle(next);
     setFound(next.placements.map(() => false));
     setFirstTap(null);
     window.clearTimeout(flashTimer.current);
     setFlashCells(new Set());
-  }, [grade, roundId]);
+  }, [pool, roundId]);
 
   useEffect(() => () => window.clearTimeout(flashTimer.current), []);
 
@@ -129,8 +140,12 @@ export function WordSearchGame() {
       game={game}
       icon={<Compass className="h-7 w-7" aria-hidden="true" />}
       instructions="Tap the first letter of a hidden word, then its last letter."
-      grade={grade}
-      onGradeChange={setGrade}
+      picker={<BankPicker bank={bank} banks={banks} onChange={setActive} />}
+      notice={
+        pool.length < 5 ? (
+          <NotEnoughWords need={5} requirement="words of 3–12 letters" />
+        ) : undefined
+      }
       round={round}
       onRestart={() => setRoundId((n) => n + 1)}
     >

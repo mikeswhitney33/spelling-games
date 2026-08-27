@@ -3,16 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, LayoutGrid } from "lucide-react";
 
+import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { GameFrame } from "@/components/game-frame";
-import { useGrade } from "@/hooks/use-spelling-round";
+import { useWordBank } from "@/hooks/use-bank";
 import type { RoundState } from "@/hooks/use-spelling-round";
 import {
+  CROSSWORD_MAX_LENGTH,
   generateCrossword,
   type CrosswordPlacement,
   type CrosswordPuzzle,
 } from "@/lib/crossword";
 import { GAMES } from "@/lib/games";
-import { WORD_LISTS } from "@/lib/words";
 import { cn } from "@/lib/utils";
 
 const game = GAMES.find((g) => g.slug === "mini-crossword")!;
@@ -26,7 +27,14 @@ function placementCells(p: CrosswordPlacement): string[] {
 }
 
 export function MiniCrosswordGame() {
-  const [grade, setGrade] = useGrade();
+  const { bank, banks, setActive } = useWordBank();
+  const pool = useMemo(
+    () =>
+      bank.entries.filter(
+        (e) => e.hint && e.word.length >= 3 && e.word.length <= CROSSWORD_MAX_LENGTH,
+      ),
+    [bank],
+  );
   const [roundId, setRoundId] = useState(0);
   const [puzzle, setPuzzle] = useState<CrosswordPuzzle | null>(null);
   const [letters, setLettersState] = useState<Record<string, string>>({});
@@ -54,7 +62,7 @@ export function MiniCrosswordGame() {
   const inputs = useRef<Map<string, HTMLInputElement>>(new Map());
 
   useEffect(() => {
-    const next = generateCrossword(WORD_LISTS[grade], 5);
+    const next = generateCrossword(pool, 5);
     setPuzzle(next);
     setLetters({});
     setSolved(next.placements.map(() => false));
@@ -64,7 +72,7 @@ export function MiniCrosswordGame() {
     window.clearTimeout(shakeTimer.current);
     setShakeIndex(null);
     filledBefore.current = new Set();
-  }, [grade, roundId]);
+  }, [pool, roundId]);
 
   useEffect(() => () => window.clearTimeout(shakeTimer.current), []);
 
@@ -263,8 +271,12 @@ export function MiniCrosswordGame() {
       game={game}
       icon={<LayoutGrid className="h-7 w-7" aria-hidden="true" />}
       instructions="Use the clues to fill the grid — words cross and share letters."
-      grade={grade}
-      onGradeChange={setGrade}
+      picker={<BankPicker bank={bank} banks={banks} onChange={setActive} />}
+      notice={
+        pool.length < 5 ? (
+          <NotEnoughWords need={5} requirement="words with hints (3–9 letters)" />
+        ) : undefined
+      }
       round={round}
       onRestart={() => setRoundId((n) => n + 1)}
     >
