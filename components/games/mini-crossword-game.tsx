@@ -8,6 +8,7 @@ import { GameFrame } from "@/components/game-frame";
 import { useWordBank } from "@/hooks/use-bank";
 import type { RoundState } from "@/hooks/use-spelling-round";
 import {
+  CROSSWORD_MAX_LENGTH,
   generateCrossword,
   type CrosswordPlacement,
   type CrosswordPuzzle,
@@ -28,7 +29,10 @@ function placementCells(p: CrosswordPlacement): string[] {
 export function MiniCrosswordGame() {
   const { bank, banks, setActive } = useWordBank();
   const pool = useMemo(
-    () => bank.entries.filter((e) => e.hint && e.word.length >= 3),
+    () =>
+      bank.entries.filter(
+        (e) => e.hint && e.word.length >= 3 && e.word.length <= CROSSWORD_MAX_LENGTH,
+      ),
     [bank],
   );
   const [roundId, setRoundId] = useState(0);
@@ -268,7 +272,7 @@ export function MiniCrosswordGame() {
       picker={<BankPicker bank={bank} banks={banks} onChange={setActive} />}
       notice={
         pool.length < 5 ? (
-          <NotEnoughWords need={5} requirement="words with hints" />
+          <NotEnoughWords need={5} requirement="words with hints (3–9 letters)" />
         ) : undefined
       }
       round={round}

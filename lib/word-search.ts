@@ -23,9 +23,14 @@ export interface WordSearchConfig {
   diagonals: boolean;
 }
 
+/** The longest word a word-search grid can hold. */
+export const WORD_SEARCH_MAX_LENGTH = 12;
+
 /** Grid size scales with the pool's word lengths instead of a grade band. */
 export function configForPool(pool: readonly BankEntry[]): WordSearchConfig {
-  const lengths = pool.map((e) => e.word.length).filter((l) => l <= 12);
+  const lengths = pool
+    .map((e) => e.word.length)
+    .filter((l) => l <= WORD_SEARCH_MAX_LENGTH);
   const maxLen = lengths.length > 0 ? Math.max(...lengths) : 5;
   const size = Math.min(12, Math.max(7, maxLen + 2));
   return { size, count: size <= 8 ? 5 : 6, diagonals: size >= 10 };

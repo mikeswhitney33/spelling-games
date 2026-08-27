@@ -36,15 +36,19 @@ function validateWord(word: string, existing: BankEntry[]): string | null {
   return null;
 }
 
-/** A sentence must use the word exactly once so Fix the Sentence works. */
+/**
+ * A sentence must use the word exactly once so Fix the Sentence works.
+ * Tokenizes exactly like the game does (whole space-separated tokens with
+ * punctuation stripped), so "well-known" never counts as "well".
+ */
 function validateSentence(word: string, sentence: string): string | null {
   if (!sentence) return null;
-  const tokens = sentence
-    .split(/\s+/)
-    .map((t) => (t.match(/[A-Za-z']+/)?.[0] ?? "").toLowerCase());
-  const count = tokens.filter((t) => t === word.toLowerCase()).length;
+  const count = sentence.split(" ").filter((raw) => {
+    const match = raw.match(/^([^A-Za-z']*)([A-Za-z'][A-Za-z']*)([^A-Za-z']*)$/);
+    return match ? match[2].toLowerCase() === word.toLowerCase() : false;
+  }).length;
   if (count !== 1) {
-    return "The sentence needs to use the word exactly once.";
+    return "The sentence needs to use the word exactly once, on its own.";
   }
   return null;
 }

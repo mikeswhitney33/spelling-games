@@ -111,14 +111,27 @@ export function misspellingCandidates(word: string): string[] {
 }
 
 /**
- * Candidates for words outside the built-in vocabulary: only letter doubling,
- * which almost never lands on a real English word. The dictionary-derived
- * guard can't cover custom words, so the cautious rules apply instead.
+ * Candidates for words outside the built-in vocabulary, where the
+ * dictionary-derived guard can't help. General letter doubling lands on real
+ * words exactly where spelling lists live (hoping→hopping, diner→dinner), so
+ * only edits that essentially never produce English words are used: tripling
+ * an existing double letter, doubling the first letter, and doubling the last
+ * letter of longer words. May yield fewer than three fakes — callers cope.
  */
 export function cautiousMisspellingCandidates(word: string): string[] {
   const out = new Set<string>();
-  for (let i = 0; i < word.length; i++) {
-    out.add(word.slice(0, i + 1) + word[i] + word.slice(i + 1));
+  // Triple an existing double letter (dinner → dinnner)
+  for (let i = 0; i < word.length - 1; i++) {
+    if (word[i] === word[i + 1]) {
+      out.add(word.slice(0, i + 1) + word[i] + word.slice(i + 1));
+    }
+  }
+  // Double the first letter (hoping → hhoping)
+  out.add(word[0] + word);
+  // Double the last letter of longer words (hoping → hopingg;
+  // skipped for short words where this can be real: in → inn, ad → add)
+  if (word.length >= 4) {
+    out.add(word + word[word.length - 1]);
   }
   out.delete(word);
   return [...out];

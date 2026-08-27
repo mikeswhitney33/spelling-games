@@ -26,7 +26,7 @@ const key = (row: number, col: number) => `${row},${col}`;
  * following word through a shared letter, keeping standard adjacency rules.
  * Retries with fresh word picks and keeps the densest attempt.
  */
-const MAX_WORD_LENGTH = 9;
+export const CROSSWORD_MAX_LENGTH = 9;
 
 export function generateCrossword(
   pool: readonly BankEntry[],
@@ -34,7 +34,10 @@ export function generateCrossword(
   rng: Rng = Math.random,
 ): CrosswordPuzzle {
   // Very long words make sprawling grids that don't fit small screens.
-  const usable = pool.filter((e) => e.word.length <= MAX_WORD_LENGTH);
+  const usable = pool.filter((e) => e.word.length <= CROSSWORD_MAX_LENGTH);
+  if (usable.length === 0) {
+    return { placements: [], width: 1, height: 1 };
+  }
   let best: { word: string; hint: string; row: number; col: number; dir: Direction }[] =
     [];
   let bestArea = Infinity;
