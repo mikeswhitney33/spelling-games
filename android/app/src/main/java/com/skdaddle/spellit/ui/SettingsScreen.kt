@@ -51,6 +51,16 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onEditBank: (String) -> Unit,
 ) {
+    // A rapid double-tap on "New list"/"Duplicate" must not create two banks.
+    val lastCreate = remember { androidx.compose.runtime.mutableLongStateOf(0L) }
+    val createOnce: (() -> String) -> Unit = { create ->
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastCreate.longValue > 700) {
+            lastCreate.longValue = now
+            onEditBank(create())
+        }
+    }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -73,16 +83,13 @@ fun SettingsScreen(
 
         SectionTitle("My lists")
         for (bank in store.customBanks) {
-            BankRow(bank = bank, store = store, onEditBank = onEditBank)
+            BankRow(bank = bank, store = store, onEditBank = onEditBank, createOnce = createOnce)
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
-                .clickable {
-                    val bank = store.createBank()
-                    onEditBank(bank.id)
-                }
+                .clickable { createOnce { store.createBank().id } }
                 .padding(vertical = 6.dp),
         ) {
             Icon(Icons.Filled.Add, contentDescription = null, tint = Palette.Ink, modifier = Modifier.size(18.dp))
@@ -91,7 +98,7 @@ fun SettingsScreen(
 
         SectionTitle("Built-in lists")
         for (bank in WordData.builtInBanks) {
-            BankRow(bank = bank, store = store, onEditBank = onEditBank)
+            BankRow(bank = bank, store = store, onEditBank = onEditBank, createOnce = createOnce)
         }
     }
 }
@@ -111,6 +118,7 @@ private fun BankRow(
     bank: WordBank,
     store: BankStore,
     onEditBank: (String) -> Unit,
+    createOnce: (() -> String) -> Unit,
 ) {
     Column(
         Modifier
@@ -154,11 +162,12 @@ private fun BankRow(
                 }
             } else {
                 RowAction(Icons.Filled.ContentCopy, "Duplicate") {
-                    val copy = store.createBank(
-                        name = "${bank.name} (my copy)",
-                        entries = bank.entries,
-                    )
-                    onEditBank(copy.id)
+                    createOnce {
+                        store.createBank(
+                            name = "${bank.name} (my copy)",
+                            entries = bank.entries,
+                        ).id
+                    }
                 }
             }
         }
@@ -221,7 +230,15 @@ fun BankEditorScreen(
         EditorField(value = bank.name, placeholder = "List name") { store.rename(bankId, it) }
 
         SectionTitle("Add a word")
-        EditorField(value = word, placeholder = "Word (required)") { word = it }
+        EditorField(
+            value = word,
+            placeholder = "Word (required)",
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.None,
+                autoCorrectEnabled = false,
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Ascii,
+            ),
+        ) { word = it }
         EditorField(value = hint, placeholder = "Hint (optional)") { hint = it }
         EditorField(value = sentence, placeholder = "Sentence (optional, uses the word once)") { sentence = it }
         error?.let {
@@ -262,7 +279,12 @@ fun BankEditorScreen(
                     Text(entry.word, style = headingStyle(15), color = Palette.Ink)
                     entry.hint?.let { Text(it, fontSize = 12.sp, color = Palette.MutedInk) }
                     entry.sentence?.let {
-                        Text(it, fontSize = 12.sp, color = Palette.MutedInk)
+                        Text(
+                            it,
+                            fontSize = 12.sp,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                            color = Palette.MutedInk,
+                        )
                     }
                 }
                 IconButton(onClick = { store.removeWord(index, bankId) }) {
@@ -277,6 +299,8 @@ fun BankEditorScreen(
 private fun EditorField(
     value: String,
     placeholder: String,
+    keyboardOptions: androidx.compose.foundation.text.KeyboardOptions =
+        androidx.compose.foundation.text.KeyboardOptions.Default,
     onChange: (String) -> Unit,
 ) {
     val shape = RoundedCornerShape(12.dp)
@@ -284,6 +308,7 @@ private fun EditorField(
         value = value,
         onValueChange = onChange,
         singleLine = true,
+        keyboardOptions = keyboardOptions,
         textStyle = androidx.compose.ui.text.TextStyle(
             fontSize = 15.sp,
             color = Palette.Ink,

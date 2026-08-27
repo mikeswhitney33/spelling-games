@@ -235,7 +235,20 @@ fun FeedbackPanel(
             Text("Almost! It's spelled:", style = headingStyle(17), color = Palette.Ink)
             WordTiles(word = word)
         }
-        ChunkyButton(text = if (isLast) "See my score" else "Next word", onClick = onNext)
+        // A same-frame double-tap must not advance twice (skipping a word);
+        // the panel leaves composition on advance, so this resets per word.
+        val advanced = androidx.compose.runtime.remember {
+            androidx.compose.runtime.mutableStateOf(false)
+        }
+        ChunkyButton(
+            text = if (isLast) "See my score" else "Next word",
+            onClick = {
+                if (!advanced.value) {
+                    advanced.value = true
+                    onNext()
+                }
+            },
+        )
     }
 }
 

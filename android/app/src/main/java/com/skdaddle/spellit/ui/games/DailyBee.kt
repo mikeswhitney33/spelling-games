@@ -312,7 +312,7 @@ private fun DailyScrambleChallenge(
         // Answer slots
         ShakeContainer(trigger = shakeTrigger) {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 for (i in letters.indices) {
@@ -343,7 +343,7 @@ private fun DailyScrambleChallenge(
 
         if (outcome == null) {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 for (i in letters.indices) {
@@ -454,7 +454,7 @@ private fun DailyMissingLettersChallenge(
 
         ShakeContainer(trigger = shakeTrigger) {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 for (pos in chars.indices) {
@@ -495,7 +495,7 @@ private fun DailyMissingLettersChallenge(
 
         if (outcome == null) {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 for (i in bank.indices) {
@@ -621,7 +621,7 @@ private fun DailySpotOption(
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(shape)
@@ -736,7 +736,7 @@ private fun DailyFlashChallenge(
 
         if (!showing && outcome == null) {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 repeat(entry.word.length) {

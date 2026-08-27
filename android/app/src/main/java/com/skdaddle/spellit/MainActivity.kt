@@ -51,8 +51,8 @@ private fun SpellItNav(store: BankStore, launchGame: Game?) {
         ) {
             composable("home") {
                 HomeScreen(
-                    onOpenGame = { nav.navigate("game/${it.id}") },
-                    onOpenSettings = { nav.navigate("settings") },
+                    onOpenGame = { nav.navigate("game/${it.id}") { launchSingleTop = true } },
+                    onOpenSettings = { nav.navigate("settings") { launchSingleTop = true } },
                 )
             }
             composable(
@@ -61,18 +61,14 @@ private fun SpellItNav(store: BankStore, launchGame: Game?) {
             ) { entry ->
                 val game = Game.fromId(entry.arguments?.getString("id"))
                 if (game != null) {
-                    GameHost(
-                        game = game,
-                        store = store,
-                        onManageLists = { nav.navigate("settings") },
-                    )
+                    GameHost(game = game, store = store)
                 }
             }
             composable("settings") {
                 SettingsScreen(
                     store = store,
                     onBack = { nav.popBackStack() },
-                    onEditBank = { nav.navigate("settings/edit/$it") },
+                    onEditBank = { nav.navigate("settings/edit/$it") { launchSingleTop = true } },
                 )
             }
             composable(
