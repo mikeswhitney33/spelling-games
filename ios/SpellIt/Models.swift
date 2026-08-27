@@ -47,11 +47,19 @@ enum GradeBand: String, CaseIterable, Identifiable, Codable {
     }
 }
 
-struct WordEntry: Hashable, Identifiable {
+struct WordEntry: Hashable, Identifiable, Codable {
     let word: String
-    let hint: String
-    let sentence: String
+    var hint: String?
+    var sentence: String?
     var id: String { word }
+}
+
+struct WordBank: Hashable, Identifiable {
+    let id: String
+    var name: String
+    var blurb: String
+    let builtIn: Bool
+    var entries: [WordEntry]
 }
 
 struct EndingTask: Hashable, Identifiable {

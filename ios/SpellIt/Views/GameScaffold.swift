@@ -205,13 +205,13 @@ struct WordTilesView: View {
 
 // MARK: - Game scaffold
 
-struct GameScaffold<Content: View>: View {
+struct GameScaffold<Content: View, Picker: View>: View {
     var game: Game
-    @Binding var grade: GradeBand
     var engine: RoundEngine
     var unit = "Word"
     var summaryText: String? = nil
     var onRestart: () -> Void
+    @ViewBuilder var picker: () -> Picker
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -240,9 +240,9 @@ struct GameScaffold<Content: View>: View {
                     }
                 }
 
-                GradePicker(grade: $grade)
+                picker()
 
-                if engine.phase == .playing {
+                if engine.phase == .playing, !engine.words.isEmpty {
                     ScoreBar(
                         unit: unit,
                         index: engine.index,

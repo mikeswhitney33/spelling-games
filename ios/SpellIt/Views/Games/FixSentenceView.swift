@@ -1,26 +1,30 @@
 import SwiftUI
 
 struct FixSentenceView: View {
-    @AppStorage("spellit.grade") private var gradeRaw = GradeBand.g23.rawValue
+    @State private var store = BankStore.shared
     @State private var engine = RoundEngine()
 
-    private var grade: Binding<GradeBand> {
-        Binding(
-            get: { GradeBand(rawValue: gradeRaw) ?? .g23 },
-            set: { gradeRaw = $0.rawValue },
-        )
+    private var pool: [WordEntry] {
+        store.activeBank.entries.filter { $0.sentence != nil }
     }
 
-    private var pool: [WordEntry] { WordData.words[grade.wrappedValue] ?? [] }
+    private func startRound() {
+        if pool.count >= 4 {
+            engine.start(pool: pool)
+        }
+    }
 
     var body: some View {
         GameScaffold(
             game: .fixTheSentence,
-            grade: grade,
             engine: engine,
-            onRestart: { engine.start(pool: pool) },
+            onRestart: { startRound() },
         ) {
-            if let entry = engine.current {
+            BankPickerView()
+        } content: {
+            if pool.count < 4 {
+                NotEnoughWordsView(need: 4, requirement: "words with sentences")
+            } else if let entry = engine.current {
                 FixSentenceWordView(
                     entry: entry,
                     isLast: engine.isLastWord,
@@ -30,8 +34,8 @@ struct FixSentenceView: View {
                 .id("\(engine.roundId)-\(engine.index)")
             }
         }
-        .onAppear { if engine.words.isEmpty { engine.start(pool: pool) } }
-        .onChange(of: gradeRaw) { engine.start(pool: pool) }
+        .onAppear { if engine.words.isEmpty { startRound() } }
+        .onChange(of: store.activeId) { startRound() }
     }
 }
 
@@ -118,10 +122,12 @@ struct FixSentenceWordView: View {
                         .font(.heading(14, weight: .medium))
                         .foregroundStyle(Color.coral)
                 }
-                Text("Clue: \(entry.hint)")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color.mutedInk)
-                    .multilineTextAlignment(.center)
+                if let hint = entry.hint {
+                    Text("Clue: \(hint)")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.mutedInk)
+                        .multilineTextAlignment(.center)
+                }
                 Button("Fix it", action: submit)
                     .buttonStyle(ChunkyButtonStyle())
                     .disabled(typed.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -176,7 +182,7 @@ struct FixSentenceWordView: View {
 
     private func setup() {
         guard tokens.isEmpty else { return }
-        var parsed = tokenizeSentence(entry.sentence, target: entry.word)
+        var parsed = tokenizeSentence(entry.sentence ?? "", target: entry.word)
         if let targetIndex = parsed.firstIndex(where: \.isTarget) {
             let fake = Misspell.make(for: entry.word, count: 1).first
                 ?? entry.word.lowercased() + String(entry.word.lowercased().last!)

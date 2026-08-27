@@ -1,13 +1,12 @@
 import SwiftUI
 
 struct MiniCrosswordView: View {
-    @AppStorage("spellit.grade") private var gradeRaw = GradeBand.g23.rawValue
+    @State private var store = BankStore.shared
 
-    private var grade: Binding<GradeBand> {
-        Binding(
-            get: { GradeBand(rawValue: gradeRaw) ?? .g23 },
-            set: { gradeRaw = $0.rawValue },
-        )
+    private var pool: [WordEntry] {
+        store.activeBank.entries.filter {
+            $0.hint != nil && $0.word.count >= 3 && $0.word.count <= CrosswordGenerator.maxWordLength
+        }
     }
 
     @State private var puzzle: CrosswordPuzzle?
@@ -35,10 +34,12 @@ struct MiniCrosswordView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
-                GradePicker(grade: grade)
+                BankPickerView()
 
                 VStack(spacing: 14) {
-                    if let puzzle {
+                    if pool.count < 5 {
+                        NotEnoughWordsView(need: 5, requirement: "words with hints (3\u{2013}9 letters)")
+                    } else if let puzzle {
                         if finished {
                             RoundSummaryView(
                                 score: results.values.filter { $0 }.count,
@@ -75,7 +76,7 @@ struct MiniCrosswordView: View {
             }
         }
         .onAppear { if puzzle == nil { startRound() } }
-        .onChange(of: gradeRaw) { startRound() }
+        .onChange(of: store.activeId) { startRound() }
         .onDisappear { shakeTask?.cancel() }
     }
 
@@ -375,7 +376,11 @@ struct MiniCrosswordView: View {
 
     private func startRound() {
         shakeTask?.cancel()
-        puzzle = CrosswordGenerator.generate(pool: WordData.words[grade.wrappedValue] ?? [])
+        guard pool.count >= 5 else {
+            puzzle = nil
+            return
+        }
+        puzzle = CrosswordGenerator.generate(pool: pool)
         letters = [:]
         solved = []
         results = [:]

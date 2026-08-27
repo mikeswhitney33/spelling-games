@@ -8,6 +8,7 @@ struct HomeView: View {
     ]
 
     @State private var path: [Game] = HomeView.launchGame()
+    @State private var showSettings = false
 
     /// Debug hook: `-game wordScramble` launches straight into that game.
     private static func launchGame() -> [Game] {
@@ -29,6 +30,19 @@ struct HomeView: View {
                 .padding(16)
             }
             .background(Color.paper)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Label("Word lists", systemImage: "gearshape.fill")
+                            .foregroundStyle(Color.ink)
+                    }
+                }
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView()
+            }
             .navigationDestination(for: Game.self) { game in
                 destination(for: game)
             }

@@ -55,7 +55,7 @@ enum CrosswordGenerator {
             var placed: [CrosswordPlacement] = []
 
             func setWord(_ entry: WordEntry, _ row: Int, _ col: Int, _ dir: CrosswordDirection) {
-                let placement = CrosswordPlacement(word: entry.word, hint: entry.hint, row: row, col: col, dir: dir)
+                let placement = CrosswordPlacement(word: entry.word, hint: entry.hint ?? "", row: row, col: col, dir: dir)
                 for (i, cell) in placement.cells.enumerated() {
                     grid[cell] = Array(entry.word)[i]
                     dirs[cell, default: []].insert(dir == .across)

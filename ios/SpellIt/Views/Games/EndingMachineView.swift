@@ -26,10 +26,11 @@ struct EndingMachineView: View {
     var body: some View {
         GameScaffold(
             game: .endingMachine,
-            grade: grade,
             engine: engine,
             onRestart: startRound,
         ) {
+            GradePicker(grade: grade)
+        } content: {
             if engine.current != nil, engine.index < tasks.count {
                 EndingTaskView(
                     task: tasks[engine.index],

@@ -5,6 +5,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 
+import { BUILT_IN_BANKS } from "../lib/banks";
 import { BLOCKED_WORDS } from "../lib/blocked-words";
 import { ENDING_TASKS } from "../lib/endings";
 import { REAL_WORD_GUARD } from "../lib/real-word-guard";
@@ -38,6 +39,23 @@ for (const band of GRADE_BANDS) {
     );
   }
   lines.push("    ],");
+}
+lines.push("  ]");
+
+lines.push("");
+lines.push("  static let builtInBanks: [WordBank] = [");
+for (const bank of BUILT_IN_BANKS) {
+  lines.push(
+    `    WordBank(id: "${esc(bank.id)}", name: "${esc(bank.name)}", blurb: "${esc(bank.blurb)}", builtIn: true, entries: [`,
+  );
+  for (const e of bank.entries) {
+    const hint = e.hint ? `"${esc(e.hint)}"` : "nil";
+    const sentence = e.sentence ? `"${esc(e.sentence)}"` : "nil";
+    lines.push(
+      `      WordEntry(word: "${esc(e.word)}", hint: ${hint}, sentence: ${sentence}),`,
+    );
+  }
+  lines.push("    ]),");
 }
 lines.push("  ]");
 

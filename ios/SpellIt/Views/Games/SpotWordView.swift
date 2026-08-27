@@ -1,37 +1,41 @@
 import SwiftUI
 
 struct SpotWordView: View {
-    @AppStorage("spellit.grade") private var gradeRaw = GradeBand.g23.rawValue
+    @State private var store = BankStore.shared
     @State private var engine = RoundEngine()
 
-    private var grade: Binding<GradeBand> {
-        Binding(
-            get: { GradeBand(rawValue: gradeRaw) ?? .g23 },
-            set: { gradeRaw = $0.rawValue },
-        )
+    private var pool: [WordEntry] {
+        store.activeBank.entries
     }
 
-    private var pool: [WordEntry] { WordData.words[grade.wrappedValue] ?? [] }
+    private func startRound() {
+        if pool.count >= 4 {
+            engine.start(pool: pool)
+        }
+    }
 
     var body: some View {
         GameScaffold(
             game: .spotTheWord,
-            grade: grade,
             engine: engine,
-            onRestart: { engine.start(pool: pool) },
+            onRestart: { startRound() },
         ) {
-            if let entry = engine.current {
+            BankPickerView()
+        } content: {
+            if pool.count < 4 {
+                NotEnoughWordsView(need: 4, requirement: "words")
+            } else if let entry = engine.current {
                 SpotWordChallengeView(
                     entry: entry,
                     isLast: engine.isLastWord,
                     onJudged: { engine.record(correct: $0) },
                     onNext: { engine.advance() },
                 )
-                .id("\(engine.roundId)-\(engine.index)")
+                .id("\(engine.roundId)-\(engine.index)-\(store.activeId)")
             }
         }
-        .onAppear { if engine.words.isEmpty { engine.start(pool: pool) } }
-        .onChange(of: gradeRaw) { engine.start(pool: pool) }
+        .onAppear { if engine.words.isEmpty { startRound() } }
+        .onChange(of: store.activeId) { startRound() }
     }
 }
 
@@ -47,10 +51,12 @@ struct SpotWordChallengeView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Text("Clue: \(entry.hint)")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.mutedInk)
-                .multilineTextAlignment(.center)
+            if let hint = entry.hint {
+                Text("Clue: \(hint)")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.mutedInk)
+                    .multilineTextAlignment(.center)
+            }
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 ForEach(options, id: \.self) { option in

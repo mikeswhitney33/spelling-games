@@ -60,15 +60,39 @@ enum Misspell {
         return out.filter { $0.count >= 2 }
     }
 
-    /// Every word across every grade band, lowercase — never a valid "fake".
+    /// Every built-in word, lowercase — never a valid "fake", and the
+    /// boundary for when the cautious custom-word rules apply.
     static let allListWords: Set<String> = Set(
-        WordData.words.values.flatMap { $0.map { $0.word.lowercased() } }
+        WordData.builtInBanks.flatMap { $0.entries.map { $0.word.lowercased() } }
     )
+
+    /// Candidates for custom words the dictionary guard can't vet: only edits
+    /// that essentially never produce real English words (general doubling
+    /// lands on real words exactly where spelling lists live —
+    /// hoping/hopping, diner/dinner).
+    static func cautiousCandidates(for word: String) -> [String] {
+        var out: Set<String> = []
+        let chars = Array(word)
+        for i in 0..<max(chars.count - 1, 0) where chars[i] == chars[i + 1] {
+            var copy = chars
+            copy.insert(chars[i], at: i)
+            out.insert(String(copy))
+        }
+        out.insert(String(chars[0]) + word)
+        if chars.count >= 4 {
+            out.insert(word + String(chars[chars.count - 1]))
+        }
+        out.remove(word)
+        return Array(out).sorted()
+    }
 
     static func make(for word: String, count: Int) -> [String] {
         // Keep the original casing so "February" yields "Febuary", not
         // "febuary" — otherwise capitalization gives the real answer away.
-        let pool = candidates(for: word).filter {
+        // Custom words fall back to the cautious rules.
+        let cautious = !allListWords.contains(word.lowercased())
+        let raw = cautious ? cautiousCandidates(for: word) : candidates(for: word)
+        let pool = raw.filter {
             !WordData.realWordGuard.contains($0.lowercased())
                 && !allListWords.contains($0.lowercased())
         }

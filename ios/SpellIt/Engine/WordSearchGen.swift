@@ -33,18 +33,19 @@ enum WordSearchGenerator {
         let diagonals: Bool
     }
 
-    static let configs: [GradeBand: Config] = [
-        .k1: Config(size: 7, count: 5, diagonals: false),
-        .g23: Config(size: 9, count: 6, diagonals: false),
-        .g45: Config(size: 11, count: 6, diagonals: true),
-        .g6plus: Config(size: 12, count: 6, diagonals: true),
-    ]
+    /// Grid size scales with the pool's word lengths instead of a grade band.
+    static func configForPool(_ pool: [WordEntry]) -> Config {
+        let lengths = pool.map { $0.word.count }.filter { $0 <= 12 }
+        let maxLen = lengths.max() ?? 5
+        let size = min(12, max(7, maxLen + 2))
+        return Config(size: size, count: size <= 8 ? 5 : 6, diagonals: size >= 10)
+    }
 
     private static let alphabet = Array("abcdefghijklmnopqrstuvwxyz")
     private static let consonants = Array("bcdfghjklmnpqrstvwxz")
 
-    static func generate(pool: [WordEntry], grade: GradeBand) -> WordSearchPuzzle {
-        let config = configs[grade] ?? Config(size: 9, count: 6, diagonals: false)
+    static func generate(pool: [WordEntry]) -> WordSearchPuzzle {
+        let config = configForPool(pool)
         let usable = pool.filter { $0.word.count <= config.size }
         let directions: [(Int, Int)] = config.diagonals ? [(0, 1), (1, 0), (1, 1)] : [(0, 1), (1, 0)]
 
@@ -70,7 +71,7 @@ enum WordSearchGenerator {
                     let row = Int.random(in: 0...maxRow)
                     let col = Int.random(in: 0...maxCol)
                     let candidate = WordSearchPlacement(
-                        word: word, hint: entry.hint, row: row, col: col, dRow: dRow, dCol: dCol,
+                        word: word, hint: entry.hint ?? "", row: row, col: col, dRow: dRow, dCol: dCol,
                     )
                     var ok = true
                     for (i, cell) in candidate.cells.enumerated() {

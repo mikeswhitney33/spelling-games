@@ -1,29 +1,33 @@
 import SwiftUI
 
 struct FlashSpellView: View {
-    @AppStorage("spellit.grade") private var gradeRaw = GradeBand.g23.rawValue
+    @State private var store = BankStore.shared
     @State private var engine = RoundEngine()
 
-    private var grade: Binding<GradeBand> {
-        Binding(
-            get: { GradeBand(rawValue: gradeRaw) ?? .g23 },
-            set: { gradeRaw = $0.rawValue },
-        )
+    private var pool: [WordEntry] {
+        store.activeBank.entries
     }
 
-    private var pool: [WordEntry] { WordData.words[grade.wrappedValue] ?? [] }
+    private func startRound() {
+        if pool.count >= 4 {
+            engine.start(pool: pool)
+        }
+    }
 
     var body: some View {
         GameScaffold(
             game: .flashSpell,
-            grade: grade,
             engine: engine,
-            onRestart: { engine.start(pool: pool) },
+            onRestart: { startRound() },
         ) {
-            if let entry = engine.current {
+            BankPickerView()
+        } content: {
+            if pool.count < 4 {
+                NotEnoughWordsView(need: 4, requirement: "words")
+            } else if let entry = engine.current {
                 FlashWordView(
                     entry: entry,
-                    grade: grade.wrappedValue,
+                    showSeconds: GameHeuristics.flashSeconds(for: entry.word),
                     isLast: engine.isLastWord,
                     onJudged: { engine.record(correct: $0) },
                     onNext: { engine.advance() },
@@ -31,14 +35,14 @@ struct FlashSpellView: View {
                 .id("\(engine.roundId)-\(engine.index)")
             }
         }
-        .onAppear { if engine.words.isEmpty { engine.start(pool: pool) } }
-        .onChange(of: gradeRaw) { engine.start(pool: pool) }
+        .onAppear { if engine.words.isEmpty { startRound() } }
+        .onChange(of: store.activeId) { startRound() }
     }
 }
 
 struct FlashWordView: View {
     let entry: WordEntry
-    let grade: GradeBand
+    let showSeconds: Double
     let isLast: Bool
     let onJudged: (Bool) -> Void
     let onNext: () -> Void
@@ -55,18 +59,16 @@ struct FlashWordView: View {
     @State private var showTask: Task<Void, Never>?
     @FocusState private var inputFocused: Bool
 
-    private static let showSeconds: [GradeBand: Double] = [
-        .k1: 4, .g23: 3.5, .g45: 3, .g6plus: 3,
-    ]
-
     private var size: TileSize { TileSize.forWord(entry.word) }
 
     var body: some View {
         VStack(spacing: 14) {
-            Text("Clue: \(entry.hint)")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.mutedInk)
-                .multilineTextAlignment(.center)
+            if let hint = entry.hint {
+                Text("Clue: \(hint)")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.mutedInk)
+                    .multilineTextAlignment(.center)
+            }
 
             if phase == .show {
                 WordTilesView(word: entry.word, fill: .coralSoft, size: size)
@@ -118,7 +120,7 @@ struct FlashWordView: View {
                 FeedbackPanel(correct: outcome, word: entry.word, isLast: isLast, onNext: onNext)
             }
         }
-        .onAppear { scheduleHide(after: Self.showSeconds[grade] ?? 3) }
+        .onAppear { scheduleHide(after: showSeconds) }
         .onDisappear { showTask?.cancel() }
     }
 
