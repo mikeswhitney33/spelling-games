@@ -123,6 +123,13 @@ export function makeMisspellings(
   return pickN(pool, count, rng);
 }
 
+/** Copy the model word's leading capital (if any) onto text. */
+export function matchCase(model: string, text: string): string {
+  return model[0] === model[0].toUpperCase() && model[0] !== model[0].toLowerCase()
+    ? text[0].toUpperCase() + text.slice(1)
+    : text;
+}
+
 /** Choose which letter positions to blank out for Missing Letters. */
 export function pickBlankPositions(word: string, blanks: number, rng: Rng = Math.random): number[] {
   const positions = Array.from({ length: word.length }, (_, i) => i);

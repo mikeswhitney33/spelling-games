@@ -67,8 +67,11 @@ export function MissingLettersWord({
   const setup = useMemo(() => {
     const positions = pickBlankPositions(entry.word, BLANKS_PER_GRADE[grade]);
     const needed = positions.map((p) => entry.word[p]);
+    // Compare lowercased so a needed capital ("F" in February) can't draw
+    // its lowercase twin as a distractor.
+    const neededLower = needed.map((l) => l.toLowerCase());
     const distractors = pickN(
-      "abcdefghijklmnopqrstuvwxyz".split("").filter((c) => !needed.includes(c)),
+      "abcdefghijklmnopqrstuvwxyz".split("").filter((c) => !neededLower.includes(c)),
       3,
     );
     return { positions, bank: shuffle([...needed, ...distractors]) };

@@ -116,6 +116,9 @@ function BalloonWord({
   onNext: () => void;
 }) {
   const size = tileSizeForWord(entry.word);
+  // Guesses are lowercase a–z; compare against the lowercased word so
+  // capitalized entries like "February" stay winnable.
+  const word = entry.word.toLowerCase();
   const [guessed, setGuessed] = useState<Set<string>>(new Set());
   const [misses, setMisses] = useState(0);
   const [outcome, setOutcome] = useState<boolean | null>(null);
@@ -125,9 +128,9 @@ function BalloonWord({
     if (outcome !== null || guessed.has(letter)) return;
     const nextGuessed = new Set(guessed).add(letter);
     setGuessed(nextGuessed);
-    if (entry.word.includes(letter)) {
+    if (word.includes(letter)) {
       setLastMiss(false);
-      if (entry.word.split("").every((ch) => nextGuessed.has(ch))) {
+      if (word.split("").every((ch) => nextGuessed.has(ch))) {
         setOutcome(true);
         onJudged(true);
       }
@@ -182,15 +185,16 @@ function BalloonWord({
         )}
       >
         {entry.word.split("").map((letter, i) => {
-          const revealed = guessed.has(letter) || outcome !== null;
+          const wasGuessed = guessed.has(letter.toLowerCase());
+          const revealed = wasGuessed || outcome !== null;
           return (
             <Tile
               key={i}
               size={size}
               className={cn(
                 !revealed && "border-dashed border-grape bg-grape-soft/50 shadow-none",
-                revealed && guessed.has(letter) && "bg-grape-soft wobble-in",
-                revealed && !guessed.has(letter) && "bg-coral-soft wobble-in",
+                revealed && wasGuessed && "bg-grape-soft wobble-in",
+                revealed && !wasGuessed && "bg-coral-soft wobble-in",
                 outcome === true && "bg-leaf-soft",
               )}
             >
@@ -206,7 +210,7 @@ function BalloonWord({
           <div className="mx-auto mt-6 flex max-w-md flex-wrap justify-center gap-1.5">
             {ALPHABET.map((letter) => {
               const used = guessed.has(letter);
-              const hit = used && entry.word.includes(letter);
+              const hit = used && word.includes(letter);
               return (
                 <TileButton
                   key={letter}
