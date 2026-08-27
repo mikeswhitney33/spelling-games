@@ -117,7 +117,9 @@ export function MiniCrosswordGame() {
       const cells = placementCells(p);
       if (!cells.every((k) => nextLetters[k])) return;
       const attempt = cells.map((k) => nextLetters[k]).join("");
-      if (attempt === p.word) {
+      // Typed letters are lowercased on input; lowercase the target so
+      // capitalized entries like "February" stay solvable.
+      if (attempt === p.word.toLowerCase()) {
         // A correct word counts no matter which word the kid was working on.
         nextSolved[index] = true;
         nextResults[index] = nextResults[index] ?? true;

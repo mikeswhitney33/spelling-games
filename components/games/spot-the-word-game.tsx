@@ -8,7 +8,7 @@ import { FeedbackPanel, GameFrame } from "@/components/game-frame";
 import { useWordBank } from "@/hooks/use-bank";
 import { useGameRound } from "@/hooks/use-spelling-round";
 import { ALL_BUILT_IN_WORDS, type BankEntry } from "@/lib/banks";
-import { makeMisspellings, shuffle } from "@/lib/game-utils";
+import { makeMisspellings, matchCase, shuffle } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
 import { cn } from "@/lib/utils";
 
@@ -58,14 +58,18 @@ export function SpotWord({
   onNext: () => void;
 }) {
   const options = useMemo(() => {
+    // Generate from the lowercased word so the case-keyed swap tables apply
+    // to every letter, then restore a leading capital ("February") so the
+    // real answer's casing doesn't give it away. Custom words fall back to
+    // the cautious rules the dictionary guard can't vet.
     const cautious = !ALL_BUILT_IN_WORDS.has(entry.word.toLowerCase());
     const fakes = makeMisspellings(
-      entry.word,
+      entry.word.toLowerCase(),
       3,
       Math.random,
       ALL_BUILT_IN_WORDS,
       cautious,
-    );
+    ).map((fake) => matchCase(entry.word, fake));
     return shuffle([entry.word, ...fakes]);
   }, [entry.word]);
   const [chosen, setChosen] = useState<string | null>(null);

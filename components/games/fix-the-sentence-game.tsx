@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useWordBank } from "@/hooks/use-bank";
 import { useGameRound } from "@/hooks/use-spelling-round";
 import { ALL_BUILT_IN_WORDS, type BankEntry } from "@/lib/banks";
-import { makeMisspellings } from "@/lib/game-utils";
+import { makeMisspellings, matchCase } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
 import { cn } from "@/lib/utils";
 
@@ -36,12 +36,6 @@ function tokenize(sentence: string, word: string): Token[] {
     if (isTarget) targetFound = true;
     return { prefix, core, suffix, isTarget };
   });
-}
-
-function matchCase(model: string, text: string): string {
-  return model[0] === model[0].toUpperCase() && model[0] !== model[0].toLowerCase()
-    ? text[0].toUpperCase() + text.slice(1)
-    : text;
 }
 
 export function FixTheSentenceGame() {
