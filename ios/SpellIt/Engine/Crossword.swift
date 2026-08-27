@@ -56,8 +56,11 @@ enum CrosswordGenerator {
 
             func setWord(_ entry: WordEntry, _ row: Int, _ col: Int, _ dir: CrosswordDirection) {
                 let placement = CrosswordPlacement(word: entry.word, hint: entry.hint, row: row, col: col, dir: dir)
+                let chars = Array(entry.word)
                 for (i, cell) in placement.cells.enumerated() {
-                    grid[cell] = Array(entry.word)[i]
+                    // Store lowercase so capitalized entries ("February") still
+                    // cross lowercase words sharing the letter.
+                    grid[cell] = Character(chars[i].lowercased())
                     dirs[cell, default: []].insert(dir == .across)
                 }
                 placed.append(placement)
@@ -72,7 +75,7 @@ enum CrosswordGenerator {
                 for i in word.indices {
                     let cell = GridCell(row: row + dr * i, col: col + dc * i)
                     if let existing = grid[cell] {
-                        if existing != word[i] { return false }
+                        if existing != Character(word[i].lowercased()) { return false }
                         if dirs[cell]?.contains(dir == .across) == true { return false }
                         crossings += 1
                     } else {
@@ -91,7 +94,7 @@ enum CrosswordGenerator {
                 for p in placed {
                     let pChars = Array(p.word)
                     for i in pChars.indices {
-                        for j in wordChars.indices where pChars[i] == wordChars[j] {
+                        for j in wordChars.indices where pChars[i].lowercased() == wordChars[j].lowercased() {
                             let option: (Int, Int, CrosswordDirection) =
                                 p.dir == .across
                                     ? (p.row - j, p.col + i, .down)
