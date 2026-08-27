@@ -19,7 +19,9 @@ class Mulberry32(seed: UInt) {
 
 /**
  * Port of the site's djb2-style string hash (matches hashString in
- * daily-bee-game.tsx).
+ * daily-bee-game.tsx). Seeds are ASCII date + grade-key strings; the three
+ * platforms' char iteration (UTF-16 units here, unicode scalars on iOS,
+ * charCodeAt on the web) only agrees for BMP characters, so keep seeds ASCII.
  */
 fun seedHash(text: String): UInt {
     var hash = 5381u

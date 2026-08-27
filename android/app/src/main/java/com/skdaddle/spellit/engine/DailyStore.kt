@@ -43,7 +43,10 @@ object DailyStore {
     }
 
     fun yesterdayOf(today: String): String {
-        val parts = today.split("-").map { it.toInt() }
+        val parts = today.split("-").mapNotNull { it.toIntOrNull() }
+        // A malformed stored date just breaks the streak chain (matching the
+        // iOS fallback) instead of crashing save().
+        if (parts.size != 3) return ""
         val calendar = java.util.GregorianCalendar(parts[0], parts[1] - 1, parts[2])
         calendar.add(Calendar.DAY_OF_MONTH, -1)
         return formatDate(calendar)

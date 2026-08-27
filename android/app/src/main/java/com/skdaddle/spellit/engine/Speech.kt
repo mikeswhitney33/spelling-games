@@ -27,7 +27,14 @@ class Speaker private constructor(context: Context) {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 ready = true
-                tts.language = Locale.US
+                val result = tts.setLanguage(Locale.US)
+                if (result == TextToSpeech.LANG_MISSING_DATA ||
+                    result == TextToSpeech.LANG_NOT_SUPPORTED
+                ) {
+                    // Fall back to the engine's default voice rather than
+                    // going silent — some devices ship without en-US data.
+                    tts.language = Locale.getDefault()
+                }
                 pending?.let { (text, slow) -> speak(text, slow) }
                 pending = null
             }
