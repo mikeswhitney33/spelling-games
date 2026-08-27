@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "generate:guard": "tsx scripts/generate-real-word-guard.ts"
+    "generate:guard": "tsx scripts/generate-real-word-guard.ts",
+    "generate:swift": "tsx scripts/generate-swift-data.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

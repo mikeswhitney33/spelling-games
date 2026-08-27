@@ -40,6 +40,10 @@ Outputs a fully static site to `out/`.
 
 Deployed on Vercel — import the repo at [vercel.com/new](https://vercel.com/new) and every push to `main` deploys automatically, zero config. The site is a plain static export (`out/`), so it can also be dropped onto any static host.
 
+## iOS app
+
+A fully native SwiftUI version of all twelve games lives in [ios/](ios/) — same word lists, same crayon-and-tile design, plus real on-device text-to-speech. Word data is generated from the TypeScript source of truth with `npm run generate:swift`, so the app and site can't drift. See [docs/APP_STORE.md](docs/APP_STORE.md) for building, signing, and App Store submission (including Kids Category notes).
+
 ## Adding words
 
 Word lists live in [lib/words.ts](lib/words.ts) — each entry is a word plus a kid-friendly clue. Add entries to any grade band and every game picks them up.
