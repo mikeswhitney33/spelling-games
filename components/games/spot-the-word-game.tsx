@@ -5,7 +5,7 @@ import { Check, Search, X } from "lucide-react";
 
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
 import { useGrade, useSpellingRound } from "@/hooks/use-spelling-round";
-import { makeMisspellings, shuffle } from "@/lib/game-utils";
+import { makeMisspellings, matchCase, shuffle } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
 import { ALL_WORDS, type WordEntry } from "@/lib/words";
 import { cn } from "@/lib/utils";
@@ -52,7 +52,15 @@ export function SpotWord({
   onNext: () => void;
 }) {
   const options = useMemo(() => {
-    const fakes = makeMisspellings(entry.word, 3, Math.random, ALL_WORDS);
+    // Generate from the lowercased word so the case-keyed swap tables apply
+    // to every letter, then restore a leading capital ("February") so the
+    // real answer's casing doesn't give it away.
+    const fakes = makeMisspellings(
+      entry.word.toLowerCase(),
+      3,
+      Math.random,
+      ALL_WORDS,
+    ).map((fake) => matchCase(entry.word, fake));
     return shuffle([entry.word, ...fakes]);
   }, [entry.word]);
   const [chosen, setChosen] = useState<string | null>(null);

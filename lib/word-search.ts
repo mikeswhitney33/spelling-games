@@ -69,15 +69,17 @@ function gridHasProblem(
   const placedCells = new Set<string>();
   const placementPaths = new Map<string, Set<string>>();
   for (const p of placements) {
-    const path = p.word
+    // Grid cells are lowercase, so scan with the lowercased word.
+    const word = p.word.toLowerCase();
+    const path = word
       .split("")
       .map((_, i) => `${p.row + p.dRow * i},${p.col + p.dCol * i}`);
     path.forEach((k) => placedCells.add(k));
     const reversed = [...path].reverse();
-    const set = placementPaths.get(p.word) ?? new Set<string>();
+    const set = placementPaths.get(word) ?? new Set<string>();
     set.add(path.join("|"));
     set.add(reversed.join("|"));
-    placementPaths.set(p.word, set);
+    placementPaths.set(word, set);
   }
 
   const answerWords = [...placementPaths.keys()];
@@ -144,7 +146,7 @@ export function generateWordSearch(
       const word = entry.word.toLowerCase();
       // Reverse pairs (nap/pan) make selections ambiguous — keep one.
       const reversed = [...word].reverse().join("");
-      if (placements.some((p) => p.word === reversed)) continue;
+      if (placements.some((p) => p.word.toLowerCase() === reversed)) continue;
       let placed = false;
       for (let attempt2 = 0; attempt2 < 60 && !placed; attempt2++) {
         const [dRow, dCol] = directions[Math.floor(rng() * directions.length)];
@@ -164,7 +166,9 @@ export function generateWordSearch(
         for (let i = 0; i < word.length; i++) {
           cells.set(`${row + dRow * i},${col + dCol * i}`, word[i]);
         }
-        placements.push({ word, hint: entry.hint, row, col, dRow, dCol });
+        // Keep the entry's casing for the word-chip list; the grid cells
+        // above already hold the lowercase letters.
+        placements.push({ word: entry.word, hint: entry.hint, row, col, dRow, dCol });
         placed = true;
       }
     }
@@ -174,7 +178,9 @@ export function generateWordSearch(
   // Fill the empty cells, biased toward the placed words' letters so the fill
   // looks plausible; reroll the fill if it forms a blocked word or a stray
   // copy of an answer word.
-  const wordLetters = best.placements.flatMap((p) => p.word.split(""));
+  const wordLetters = best.placements.flatMap((p) =>
+    p.word.toLowerCase().split(""),
+  );
   const buildGrid = (fill: (r: number, c: number) => string): string[][] =>
     Array.from({ length: size }, (_, r) =>
       Array.from({ length: size }, (_, c) => {

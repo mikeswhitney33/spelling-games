@@ -7,7 +7,7 @@ import { FeedbackPanel, GameFrame } from "@/components/game-frame";
 import { SpellingInput } from "@/components/spelling-input";
 import { Button } from "@/components/ui/button";
 import { useGrade, useSpellingRound } from "@/hooks/use-spelling-round";
-import { makeMisspellings } from "@/lib/game-utils";
+import { makeMisspellings, matchCase } from "@/lib/game-utils";
 import { GAMES } from "@/lib/games";
 import { ALL_WORDS, type WordEntry } from "@/lib/words";
 import { cn } from "@/lib/utils";
@@ -34,12 +34,6 @@ function tokenize(sentence: string, word: string): Token[] {
     if (isTarget) targetFound = true;
     return { prefix, core, suffix, isTarget };
   });
-}
-
-function matchCase(model: string, text: string): string {
-  return model[0] === model[0].toUpperCase() && model[0] !== model[0].toLowerCase()
-    ? text[0].toUpperCase() + text.slice(1)
-    : text;
 }
 
 export function FixTheSentenceGame() {
