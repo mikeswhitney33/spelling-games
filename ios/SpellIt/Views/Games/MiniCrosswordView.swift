@@ -107,7 +107,10 @@ struct MiniCrosswordView: View {
 
     private func clueBar(_ puzzle: CrosswordPuzzle) -> some View {
         let placement = puzzle.placements[safe: selected]
-        let crossing = activeCell.map { cellInfo($0, in: puzzle).indices.count > 1 } ?? false
+        // Offer the swap only when the crossing word is still playable.
+        let crossing = activeCell.map { cell in
+            cellInfo(cell, in: puzzle).indices.contains { $0 != selected && !solved.contains($0) }
+        } ?? false
         return HStack(spacing: 10) {
             Button {
                 jumpToClue(nextClueIndex(after: selected, step: -1, in: puzzle), in: puzzle)
@@ -385,13 +388,17 @@ struct MiniCrosswordView: View {
     private func tapCell(_ cell: GridCell, in puzzle: CrosswordPuzzle) {
         let info = cellInfo(cell, in: puzzle)
         guard !info.indices.isEmpty else { return }
+        // Prefer words that can still be played over solved ones.
+        let playable = info.indices.filter { !solved.contains($0) }
         if activeCell == cell, info.indices.count > 1 {
-            // Re-tapping a crossing flips to the other word.
-            if let other = info.indices.first(where: { $0 != selected }) {
+            // Re-tapping a crossing flips to the other playable word.
+            if let other = playable.first(where: { $0 != selected }) {
                 selected = other
             }
         } else if !info.indices.contains(selected) {
-            selected = info.indices.first { puzzle.placements[$0].dir == .across } ?? info.indices[0]
+            selected = playable.first { puzzle.placements[$0].dir == .across }
+                ?? playable.first
+                ?? info.indices[0]
         }
         activeCell = cell
         keyboardFocused = true
@@ -465,10 +472,15 @@ struct MiniCrosswordView: View {
                     keyboardFocused = false
                 } else if index == selected {
                     // Let the green lock land, then hop to the next unsolved clue.
-                    let next = nextClueIndex(after: index, step: 1, in: puzzle)
+                    // The target is recomputed after the sleep: the same
+                    // keystroke may have solved several words at once.
                     Task {
                         try? await Task.sleep(for: .seconds(0.6))
-                        guard !Task.isCancelled, solved.contains(index), selected == index else { return }
+                        guard !Task.isCancelled, !finished,
+                              solved.contains(index), selected == index
+                        else { return }
+                        let next = nextClueIndex(after: index, step: 1, in: puzzle)
+                        guard next != index, !solved.contains(next) else { return }
                         jumpToClue(next, in: puzzle)
                     }
                 }
