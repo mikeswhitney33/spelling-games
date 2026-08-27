@@ -67,9 +67,113 @@ struct MiniCrosswordView: View {
         }
         .background(Color.paper)
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            // Pinned above the keyboard so the active clue is always readable
+            // while typing — no scrolling back and forth.
+            if let puzzle, !finished {
+                clueBar(puzzle)
+            }
+        }
         .onAppear { if puzzle == nil { startRound() } }
         .onChange(of: gradeRaw) { startRound() }
         .onDisappear { shakeTask?.cancel() }
+    }
+
+    // MARK: Active clue bar
+
+    /// Clue order for the prev/next chevrons: across by number, then down.
+    private func orderedClueIndices(_ puzzle: CrosswordPuzzle) -> [Int] {
+        let indexed = puzzle.placements.enumerated()
+        let across = indexed.filter { $0.element.dir == .across }.sorted { $0.element.number < $1.element.number }
+        let down = indexed.filter { $0.element.dir == .down }.sorted { $0.element.number < $1.element.number }
+        return (across + down).map(\.offset)
+    }
+
+    /// The next clue after `index` in cycle order, preferring unsolved ones.
+    private func nextClueIndex(after index: Int, step: Int, in puzzle: CrosswordPuzzle) -> Int {
+        let order = orderedClueIndices(puzzle)
+        guard let at = order.firstIndex(of: index), order.count > 1 else { return index }
+        for offset in 1..<order.count {
+            let wrapped = ((at + step * offset) % order.count + order.count) % order.count
+            let candidate = order[wrapped]
+            if !solved.contains(candidate) { return candidate }
+        }
+        return index
+    }
+
+    private func jumpToClue(_ index: Int, in puzzle: CrosswordPuzzle) {
+        selectClue(index, in: puzzle)
+    }
+
+    private func clueBar(_ puzzle: CrosswordPuzzle) -> some View {
+        let placement = puzzle.placements[safe: selected]
+        // Offer the swap only when the crossing word is still playable.
+        let crossing = activeCell.map { cell in
+            cellInfo(cell, in: puzzle).indices.contains { $0 != selected && !solved.contains($0) }
+        } ?? false
+        return HStack(spacing: 10) {
+            Button {
+                jumpToClue(nextClueIndex(after: selected, step: -1, in: puzzle), in: puzzle)
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Color.ink)
+                    .frame(width: 36, height: 44)
+            }
+            .accessibilityLabel("Previous clue")
+
+            VStack(spacing: 2) {
+                if let placement {
+                    Text("\(placement.number) \(placement.dir == .across ? "ACROSS" : "DOWN") · \(placement.word.count) letters")
+                        .font(.heading(11, weight: .semibold))
+                        .foregroundStyle(Color.mutedInk)
+                    Text(placement.hint)
+                        .font(.heading(14, weight: .medium))
+                        .foregroundStyle(Color.ink)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // Tapping the clue re-focuses the word's first empty cell.
+                jumpToClue(selected, in: puzzle)
+            }
+
+            if crossing {
+                Button {
+                    if let cell = activeCell { tapCell(cell, in: puzzle) }
+                } label: {
+                    Image(systemName: "arrow.triangle.swap")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Color.ink)
+                        .frame(width: 36, height: 44)
+                }
+                .accessibilityLabel("Switch to the crossing clue")
+            }
+
+            Button {
+                jumpToClue(nextClueIndex(after: selected, step: 1, in: puzzle), in: puzzle)
+            } label: {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Color.ink)
+                    .frame(width: 36, height: 44)
+            }
+            .accessibilityLabel("Next clue")
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.skySoft)
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.ink, lineWidth: 2.5))
+        )
+        .padding(.horizontal, 12)
+        .padding(.bottom, 6)
+        .accessibilityElement(children: .contain)
     }
 
     private var header: some View {
@@ -284,13 +388,17 @@ struct MiniCrosswordView: View {
     private func tapCell(_ cell: GridCell, in puzzle: CrosswordPuzzle) {
         let info = cellInfo(cell, in: puzzle)
         guard !info.indices.isEmpty else { return }
+        // Prefer words that can still be played over solved ones.
+        let playable = info.indices.filter { !solved.contains($0) }
         if activeCell == cell, info.indices.count > 1 {
-            // Re-tapping a crossing flips to the other word.
-            if let other = info.indices.first(where: { $0 != selected }) {
+            // Re-tapping a crossing flips to the other playable word.
+            if let other = playable.first(where: { $0 != selected }) {
                 selected = other
             }
         } else if !info.indices.contains(selected) {
-            selected = info.indices.first { puzzle.placements[$0].dir == .across } ?? info.indices[0]
+            selected = playable.first { puzzle.placements[$0].dir == .across }
+                ?? playable.first
+                ?? info.indices[0]
         }
         activeCell = cell
         keyboardFocused = true
@@ -360,7 +468,22 @@ struct MiniCrosswordView: View {
             if attempt == p.word.lowercased() {
                 solved.insert(index)
                 if results[index] == nil { results[index] = true }
-                if solved.count == puzzle.placements.count { keyboardFocused = false }
+                if solved.count == puzzle.placements.count {
+                    keyboardFocused = false
+                } else if index == selected {
+                    // Let the green lock land, then hop to the next unsolved clue.
+                    // The target is recomputed after the sleep: the same
+                    // keystroke may have solved several words at once.
+                    Task {
+                        try? await Task.sleep(for: .seconds(0.6))
+                        guard !Task.isCancelled, !finished,
+                              solved.contains(index), selected == index
+                        else { return }
+                        let next = nextClueIndex(after: index, step: 1, in: puzzle)
+                        guard next != index, !solved.contains(next) else { return }
+                        jumpToClue(next, in: puzzle)
+                    }
+                }
             } else if index == selected, cells.contains(changed), results[index] == nil {
                 results[index] = false
                 shakingIndex = index
