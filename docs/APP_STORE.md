@@ -28,8 +28,8 @@ cd ios && xcodebuild -project SpellIt.xcodeproj -scheme SpellIt \
    team N888N8Y6N6 / Skdaddle LLC). Change it there if you want a
    different one, then re-run `xcodegen generate`. The ID is registered
    in the Skdaddle developer account.
-3. **Signing** — open the project in Xcode → Signing & Capabilities → pick
-   your team. `CODE_SIGN_STYLE` is already Automatic.
+3. **Signing** — sign in to the Skdaddle account in Xcode; the team is
+   already configured in `project.yml`. `CODE_SIGN_STYLE` is Automatic.
 4. **App Store Connect** — create the app record with the same bundle ID.
 
 ## Archive & upload
