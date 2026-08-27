@@ -58,8 +58,9 @@ enum WordSearchGenerator {
             for entry in entries {
                 if placements.count >= config.count { break }
                 let word = entry.word.lowercased()
+                // Reverse pairs (nap/pan) make selections ambiguous — keep one.
                 let reversed = String(word.reversed())
-                if placements.contains(where: { $0.word == reversed }) { continue }
+                if placements.contains(where: { $0.word.lowercased() == reversed }) { continue }
                 let chars = Array(word)
 
                 for _ in 0..<60 {
@@ -69,8 +70,10 @@ enum WordSearchGenerator {
                     guard maxRow >= 0, maxCol >= 0 else { break }
                     let row = Int.random(in: 0...maxRow)
                     let col = Int.random(in: 0...maxCol)
+                    // Keep the entry's casing for the word-chip list; the grid
+                    // cells below hold the lowercase letters.
                     let candidate = WordSearchPlacement(
-                        word: word, hint: entry.hint, row: row, col: col, dRow: dRow, dCol: dCol,
+                        word: entry.word, hint: entry.hint, row: row, col: col, dRow: dRow, dCol: dCol,
                     )
                     var ok = true
                     for (i, cell) in candidate.cells.enumerated() {
@@ -88,7 +91,7 @@ enum WordSearchGenerator {
             if placements.count > best.placements.count { best = (placements, cells) }
         }
 
-        let wordLetters = best.placements.flatMap { Array($0.word) }
+        let wordLetters = best.placements.flatMap { Array($0.word.lowercased()) }
 
         func buildGrid(fill: () -> Character) -> [[Character]] {
             (0..<config.size).map { r in
@@ -140,10 +143,12 @@ enum WordSearchGenerator {
         var placedCells: Set<GridCell> = []
         var paths: [String: Set<[GridCell]>] = [:]
         for p in placements {
+            // Grid cells are lowercase, so scan with the lowercased word.
+            let word = p.word.lowercased()
             let cells = p.cells
             placedCells.formUnion(cells)
-            paths[p.word, default: []].insert(cells)
-            paths[p.word, default: []].insert(cells.reversed())
+            paths[word, default: []].insert(cells)
+            paths[word, default: []].insert(cells.reversed())
         }
 
         for line in lines(size: grid.count) {

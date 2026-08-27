@@ -126,7 +126,10 @@ struct MissingLettersWordView: View {
         let blanks = min(Self.blanksPerGrade[grade] ?? 2, chars.count)
         positions = Array(chars.indices.shuffled().prefix(blanks)).sorted()
         let needed = positions.map { chars[$0] }
-        let distractors = "abcdefghijklmnopqrstuvwxyz".filter { !needed.contains($0) }
+        // Compare lowercased so a needed capital ("F" in February) can't draw
+        // its lowercase twin as a distractor.
+        let neededLower = Set(needed.flatMap { $0.lowercased() })
+        let distractors = "abcdefghijklmnopqrstuvwxyz".filter { !neededLower.contains($0) }
             .shuffled().prefix(3)
         bank = (needed + distractors).shuffled()
         placed = Array(repeating: nil, count: positions.count)

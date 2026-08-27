@@ -62,11 +62,6 @@ func tokenizeSentence(_ sentence: String, target: String) -> [SentenceToken] {
     }
 }
 
-func matchCase(model: String, text: String) -> String {
-    guard let first = model.first, first.isUppercase, let start = text.first else { return text }
-    return String(start).uppercased() + text.dropFirst()
-}
-
 struct FixSentenceWordView: View {
     let entry: WordEntry
     let isLast: Bool
