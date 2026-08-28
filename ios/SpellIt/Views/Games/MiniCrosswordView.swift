@@ -38,7 +38,7 @@ struct MiniCrosswordView: View {
 
                 VStack(spacing: 14) {
                     if pool.count < 5 {
-                        NotEnoughWordsView(need: 5, requirement: "words with hints (3\u{2013}9 letters)")
+                        NotEnoughWordsView(need: 5, requirement: "words with hints")
                     } else if let puzzle {
                         if finished {
                             RoundSummaryView(

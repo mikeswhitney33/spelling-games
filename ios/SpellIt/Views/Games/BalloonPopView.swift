@@ -94,7 +94,6 @@ struct BalloonWordView: View {
     private static let balloonColors: [Color] = [.coral, .sun, .leaf, .sky, .grape, .coral]
     private static let alphabet = Array("abcdefghijklmnopqrstuvwxyz")
 
-    private var size: TileSize { TileSize.forWord(entry.word) }
     private var balloonsLeft: Int { Self.maxMisses - misses }
     /// Guesses are lowercase a–z; compare against the lowercased word so
     /// capitalized entries like "February" stay winnable.
@@ -117,20 +116,19 @@ struct BalloonWordView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(balloonsLeft) of \(Self.maxMisses) balloons left")
 
-            FlowLayout(spacing: 6) {
-                ForEach(Array(word.enumerated()), id: \.offset) { _, letter in
-                    let revealed = guessed.contains(letter) || outcome != nil
-                    let wasGuessed = guessed.contains(letter)
-                    TileView(
-                        letter: revealed ? String(letter) : "",
-                        size: size,
-                        fill: outcome == true ? .leafSoft
-                            : revealed && wasGuessed ? .grapeSoft
-                            : revealed ? .coralSoft
-                            : .grapeSoft.opacity(0.5),
-                        dashed: !revealed,
-                    )
-                }
+            TileRow(count: word.count) { index, size in
+                let letter = Array(word)[index]
+                let revealed = guessed.contains(letter) || outcome != nil
+                let wasGuessed = guessed.contains(letter)
+                TileView(
+                    letter: revealed ? String(letter) : "",
+                    size: size,
+                    fill: outcome == true ? .leafSoft
+                        : revealed && wasGuessed ? .grapeSoft
+                        : revealed ? .coralSoft
+                        : .grapeSoft.opacity(0.5),
+                    dashed: !revealed,
+                )
             }
             .shake(trigger: shakeTrigger)
 

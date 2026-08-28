@@ -36,6 +36,7 @@ import com.skdaddle.spellit.ui.Palette
 import com.skdaddle.spellit.ui.ShakeContainer
 import com.skdaddle.spellit.ui.Tile
 import com.skdaddle.spellit.ui.TileButton
+import com.skdaddle.spellit.ui.TileRow
 import com.skdaddle.spellit.ui.TileSize
 import com.skdaddle.spellit.ui.headingStyle
 import kotlinx.coroutines.delay
@@ -113,8 +114,6 @@ private fun MissingLettersWord(
     var shaking by remember { mutableStateOf(false) }
     var shakeTrigger by remember { mutableIntStateOf(0) }
 
-    val size = TileSize.forWord(entry.word)
-
     fun pickFromBank(bankIndex: Int) {
         if (outcome != null || shaking || placed.contains(bankIndex)) return
         val firstEmpty = placed.indexOfFirst { it == null }
@@ -167,32 +166,27 @@ private fun MissingLettersWord(
         }
 
         ShakeContainer(trigger = shakeTrigger) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                for (pos in chars.indices) {
-                    val blankIndex = setup.positions.indexOf(pos)
-                    if (blankIndex >= 0) {
-                        val bankIndex = placed.getOrNull(blankIndex)
-                        if (bankIndex != null) {
-                            TileButton(
-                                letter = setup.bank[bankIndex].toString(),
-                                size = size,
-                                fill = when {
-                                    outcome == true -> Palette.LeafSoft
-                                    shaking -> Palette.CoralSoft
-                                    else -> Palette.SunSoft
-                                },
-                            ) {
-                                clearBlank(blankIndex)
-                            }
-                        } else {
-                            Tile(letter = "", size = size, fill = Palette.SunSoft, dashed = true)
+            TileRow(count = chars.size) { pos, size ->
+                val blankIndex = setup.positions.indexOf(pos)
+                if (blankIndex >= 0) {
+                    val bankIndex = placed.getOrNull(blankIndex)
+                    if (bankIndex != null) {
+                        TileButton(
+                            letter = setup.bank[bankIndex].toString(),
+                            size = size,
+                            fill = when {
+                                outcome == true -> Palette.LeafSoft
+                                shaking -> Palette.CoralSoft
+                                else -> Palette.SunSoft
+                            },
+                        ) {
+                            clearBlank(blankIndex)
                         }
                     } else {
-                        Tile(letter = chars[pos].toString(), size = size, fill = Palette.SecondaryBg)
+                        Tile(letter = "", size = size, fill = Palette.SunSoft, dashed = true)
                     }
+                } else {
+                    Tile(letter = chars[pos].toString(), size = size, fill = Palette.SecondaryBg)
                 }
             }
         }

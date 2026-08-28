@@ -2,8 +2,6 @@ package com.skdaddle.spellit.ui.games
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
@@ -37,6 +35,7 @@ import com.skdaddle.spellit.ui.Palette
 import com.skdaddle.spellit.ui.ShakeContainer
 import com.skdaddle.spellit.ui.Tile
 import com.skdaddle.spellit.ui.TileButton
+import com.skdaddle.spellit.ui.TileRow
 import com.skdaddle.spellit.ui.TileSize
 import com.skdaddle.spellit.ui.headingStyle
 import kotlinx.coroutines.delay
@@ -90,7 +89,6 @@ private fun scrambleLetters(word: String): List<Char> {
     return original.reversed()
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ScrambleWord(
     entry: WordEntry,
@@ -105,8 +103,6 @@ private fun ScrambleWord(
     var retrying by remember { mutableStateOf(false) }
     var shaking by remember { mutableStateOf(false) }
     var shakeTrigger by remember { mutableIntStateOf(0) }
-
-    val size = TileSize.forWord(entry.word)
 
     fun pick(index: Int) {
         if (outcome != null || picked.contains(index)) return
@@ -156,26 +152,21 @@ private fun ScrambleWord(
 
         // Answer slots
         ShakeContainer(trigger = shakeTrigger) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                for (i in letters.indices) {
-                    if (i < picked.size) {
-                        TileButton(
-                            letter = letters[picked[i]].toString(),
-                            size = size,
-                            fill = when {
-                                outcome == true -> Palette.LeafSoft
-                                shaking -> Palette.CoralSoft
-                                else -> Color.White
-                            },
-                        ) {
-                            unpick(i)
-                        }
-                    } else {
-                        Tile(letter = "", size = size, dashed = true)
+            TileRow(count = letters.size) { i, size ->
+                if (i < picked.size) {
+                    TileButton(
+                        letter = letters[picked[i]].toString(),
+                        size = size,
+                        fill = when {
+                            outcome == true -> Palette.LeafSoft
+                            shaking -> Palette.CoralSoft
+                            else -> Color.White
+                        },
+                    ) {
+                        unpick(i)
                     }
+                } else {
+                    Tile(letter = "", size = size, dashed = true)
                 }
             }
         }
@@ -189,19 +180,14 @@ private fun ScrambleWord(
         }
 
         if (outcome == null) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                for (i in letters.indices) {
-                    TileButton(
-                        letter = letters[i].toString(),
-                        size = size,
-                        fill = Palette.CoralSoft,
-                        enabled = !(picked.contains(i) || shaking),
-                    ) {
-                        pick(i)
-                    }
+            TileRow(count = letters.size) { i, size ->
+                TileButton(
+                    letter = letters[i].toString(),
+                    size = size,
+                    fill = Palette.CoralSoft,
+                    enabled = !(picked.contains(i) || shaking),
+                ) {
+                    pick(i)
                 }
             }
 

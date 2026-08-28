@@ -40,30 +40,30 @@ extension Font {
 
 // MARK: - Letter tile, the signature element
 
-enum TileSize {
-    case xs, sm, md, lg
+struct TileSize: Equatable {
+    var side: CGFloat
+    var fontSize: CGFloat
 
-    var side: CGFloat {
-        switch self {
-        case .xs: 32
-        case .sm: 40
-        case .md: 48
-        case .lg: 56
-        }
+    static let xs = TileSize(side: 32, fontSize: 15)
+    static let sm = TileSize(side: 40, fontSize: 19)
+    static let md = TileSize(side: 48, fontSize: 24)
+    static let lg = TileSize(side: 56, fontSize: 30)
+
+    /// A tile of an arbitrary edge length, with the letter scaled to match.
+    init(side: CGFloat) {
+        self.side = side
+        self.fontSize = (side * 0.5).rounded()
     }
 
-    var fontSize: CGFloat {
-        switch self {
-        case .xs: 15
-        case .sm: 19
-        case .md: 24
-        case .lg: 30
-        }
+    init(side: CGFloat, fontSize: CGFloat) {
+        self.side = side
+        self.fontSize = fontSize
     }
 
-    static func forWord(_ word: String) -> TileSize {
-        if word.count > 10 { return .xs }
-        if word.count > 7 { return .sm }
+    /// Static fallback for the frame before a row has been measured.
+    static func forCount(_ count: Int) -> TileSize {
+        if count > 10 { return .xs }
+        if count > 7 { return .sm }
         return .md
     }
 }

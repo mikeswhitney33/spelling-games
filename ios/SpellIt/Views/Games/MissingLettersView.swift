@@ -59,7 +59,6 @@ struct MissingLettersWordView: View {
     @State private var shaking = false
     @State private var shakeTrigger = 0
 
-    private var size: TileSize { TileSize.forWord(entry.word) }
     private var chars: [Character] { Array(entry.word) }
 
     var body: some View {
@@ -71,23 +70,21 @@ struct MissingLettersWordView: View {
                     .multilineTextAlignment(.center)
             }
 
-            FlowLayout(spacing: 6) {
-                ForEach(chars.indices, id: \.self) { pos in
-                    if let blankIndex = positions.firstIndex(of: pos) {
-                        if let bankIndex = placed.indices.contains(blankIndex) ? placed[blankIndex] : nil {
-                            TileButton(
-                                letter: String(bank[bankIndex]),
-                                size: size,
-                                fill: outcome == true ? .leafSoft : shaking ? .coralSoft : .sunSoft,
-                            ) {
-                                clearBlank(blankIndex)
-                            }
-                        } else {
-                            TileView(letter: "", size: size, fill: .sunSoft, dashed: true)
+            TileRow(count: chars.count) { pos, size in
+                if let blankIndex = positions.firstIndex(of: pos) {
+                    if let bankIndex = placed.indices.contains(blankIndex) ? placed[blankIndex] : nil {
+                        TileButton(
+                            letter: String(bank[bankIndex]),
+                            size: size,
+                            fill: outcome == true ? .leafSoft : shaking ? .coralSoft : .sunSoft,
+                        ) {
+                            clearBlank(blankIndex)
                         }
                     } else {
-                        TileView(letter: String(chars[pos]), size: size, fill: .secondaryBg)
+                        TileView(letter: "", size: size, fill: .sunSoft, dashed: true)
                     }
+                } else {
+                    TileView(letter: String(chars[pos]), size: size, fill: .secondaryBg)
                 }
             }
             .shake(trigger: shakeTrigger)

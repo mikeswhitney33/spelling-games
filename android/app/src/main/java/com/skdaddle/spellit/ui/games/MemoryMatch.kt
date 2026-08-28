@@ -46,6 +46,7 @@ import com.skdaddle.spellit.ui.Palette
 import com.skdaddle.spellit.ui.RoundSummary
 import com.skdaddle.spellit.ui.headingStyle
 import kotlin.math.ceil
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -112,11 +113,15 @@ fun MemoryMatchScreen(store: BankStore, onManageLists: () -> Unit) {
 
     LaunchedEffect(store.activeId, store.revision) { startRound() }
 
+    // Efficiency-based score: fewer tries, more stars — but finishing the board
+    // always earns at least one star. Even a player who never forgets a card
+    // needs roughly 1.5 tries per pair to clear it, so the three-star window
+    // starts from there rather than from a perfect run; the old thresholds sat
+    // below optimal play and handed out one or two stars almost every game.
     val scoreForAttempts = when {
-        attempts <= PAIR_COUNT + 2 -> PAIR_COUNT
-        attempts <= PAIR_COUNT + 6 -> ceil(PAIR_COUNT * 0.75).toInt()
-        attempts <= PAIR_COUNT + 11 -> ceil(PAIR_COUNT * 0.6).toInt()
-        else -> ceil(PAIR_COUNT * 0.5).toInt()
+        attempts <= (PAIR_COUNT * 2.4).roundToInt() -> PAIR_COUNT
+        attempts <= (PAIR_COUNT * 3.4).roundToInt() -> ceil(PAIR_COUNT * 0.75).toInt()
+        else -> ceil(PAIR_COUNT * 0.6).toInt()
     }
 
     GameScaffold(

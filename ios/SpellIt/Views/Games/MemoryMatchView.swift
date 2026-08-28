@@ -142,12 +142,20 @@ struct MemoryMatchView: View {
         )
     }
 
+    /// Efficiency-based score: fewer tries, more stars — but finishing the
+    /// board always earns at least one star.
+    ///
+    /// Even a player who never forgets a card needs roughly 1.5 tries per pair
+    /// to clear the board, so the three-star window starts from there rather
+    /// than from a perfect run; the old thresholds sat below optimal play and
+    /// handed out one or two stars almost every game.
     private var scoreForAttempts: Int {
         let total = Self.pairCount
-        if attempts <= total + 2 { return total }
-        if attempts <= total + 6 { return Int(ceil(Double(total) * 0.75)) }
-        if attempts <= total + 11 { return Int(ceil(Double(total) * 0.6)) }
-        return Int(ceil(Double(total) * 0.5))
+        if attempts <= Int((Double(total) * 2.4).rounded()) { return total }
+        if attempts <= Int((Double(total) * 3.4).rounded()) {
+            return Int(ceil(Double(total) * 0.75))
+        }
+        return Int(ceil(Double(total) * 0.6))
     }
 
     private func startRound() {

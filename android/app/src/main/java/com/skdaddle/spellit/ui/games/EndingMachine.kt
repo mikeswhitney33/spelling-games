@@ -3,9 +3,9 @@ package com.skdaddle.spellit.ui.games
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -38,8 +38,22 @@ import com.skdaddle.spellit.ui.GradePicker
 import com.skdaddle.spellit.ui.Palette
 import com.skdaddle.spellit.ui.SpellingField
 import com.skdaddle.spellit.ui.Tile
+import com.skdaddle.spellit.ui.TileLadder
+import com.skdaddle.spellit.ui.TileRow
 import com.skdaddle.spellit.ui.TileSize
 import com.skdaddle.spellit.ui.headingStyle
+
+/** Room the "+" and "=" signs and their gaps claim on the equation line. */
+private val OperatorRoom = 72.dp
+
+@Composable
+private fun Operator(glyph: String) {
+    Text(
+        glyph,
+        style = headingStyle(20, FontWeight.SemiBold),
+        color = Palette.MutedInk,
+    )
+}
 
 @Composable
 fun EndingMachineScreen(onManageLists: () -> Unit) {
@@ -85,7 +99,6 @@ fun EndingMachineScreen(onManageLists: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EndingTaskChallenge(
     task: EndingTask,
@@ -96,7 +109,6 @@ private fun EndingTaskChallenge(
     var typed by remember { mutableStateOf("") }
     var outcome by remember { mutableStateOf<Boolean?>(null) }
     var retrying by remember { mutableStateOf(false) }
-    val tileSize = TileSize.forWord(task.base + task.suffix)
 
     fun submit() {
         if (outcome != null) return
@@ -119,31 +131,51 @@ private fun EndingTaskChallenge(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            for (letter in task.base) {
-                Tile(letter = letter.toString(), size = tileSize, fill = Palette.SecondaryBg)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val slots = task.base.length + task.suffix.length + 1
+            val fit = TileLadder.fit(slots, maxWidth, OperatorRoom)
+            // Once the equation no longer fits across one line, stack it rather
+            // than let the words break wherever the row runs out of room.
+            if (fit.perRow >= slots) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        fit.spacing * 2,
+                        Alignment.CenterHorizontally,
+                    ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(fit.spacing)) {
+                        for (letter in task.base) {
+                            Tile(letter.toString(), size = fit.size, fill = Palette.SecondaryBg)
+                        }
+                    }
+                    Operator("+")
+                    Row(horizontalArrangement = Arrangement.spacedBy(fit.spacing)) {
+                        for (letter in task.suffix) {
+                            Tile(letter.toString(), size = fit.size, fill = Palette.SunSoft)
+                        }
+                    }
+                    Operator("=")
+                    Tile("?", size = fit.size, fill = Palette.SunSoft)
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    TileRow(count = task.base.length) { i, size ->
+                        Tile(task.base[i].toString(), size = size, fill = Palette.SecondaryBg)
+                    }
+                    Operator("+")
+                    TileRow(count = task.suffix.length) { i, size ->
+                        Tile(task.suffix[i].toString(), size = size, fill = Palette.SunSoft)
+                    }
+                    Operator("=")
+                    Tile("?", size = TileSize.MD, fill = Palette.SunSoft)
+                }
             }
-            Box(Modifier.height(tileSize.side), contentAlignment = Alignment.Center) {
-                Text(
-                    "+",
-                    style = headingStyle(24, FontWeight.SemiBold),
-                    color = Palette.MutedInk,
-                )
-            }
-            for (letter in task.suffix) {
-                Tile(letter = letter.toString(), size = tileSize, fill = Palette.SunSoft)
-            }
-            Box(Modifier.height(tileSize.side), contentAlignment = Alignment.Center) {
-                Text(
-                    "=",
-                    style = headingStyle(24, FontWeight.SemiBold),
-                    color = Palette.MutedInk,
-                )
-            }
-            Tile(letter = "?", size = tileSize, fill = Palette.SunSoft)
         }
 
         if (outcome == null) {

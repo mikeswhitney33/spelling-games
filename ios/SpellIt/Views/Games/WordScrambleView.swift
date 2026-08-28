@@ -65,8 +65,6 @@ struct ScrambleWordView: View {
     @State private var shaking = false
     @State private var shakeTrigger = 0
 
-    private var size: TileSize { TileSize.forWord(entry.word) }
-
     var body: some View {
         VStack(spacing: 14) {
             if let hint = entry.hint {
@@ -77,19 +75,17 @@ struct ScrambleWordView: View {
             }
 
             // Answer slots
-            FlowLayout(spacing: 6) {
-                ForEach(0..<letters.count, id: \.self) { i in
-                    if i < picked.count {
-                        TileButton(
-                            letter: String(letters[picked[i]]),
-                            size: size,
-                            fill: outcome == true ? .leafSoft : shaking ? .coralSoft : .white,
-                        ) {
-                            unpick(at: i)
-                        }
-                    } else {
-                        TileView(letter: "", size: size, dashed: true)
+            TileRow(count: letters.count) { i, size in
+                if i < picked.count {
+                    TileButton(
+                        letter: String(letters[picked[i]]),
+                        size: size,
+                        fill: outcome == true ? .leafSoft : shaking ? .coralSoft : .white,
+                    ) {
+                        unpick(at: i)
                     }
+                } else {
+                    TileView(letter: "", size: size, dashed: true)
                 }
             }
             .shake(trigger: shakeTrigger)
@@ -101,16 +97,14 @@ struct ScrambleWordView: View {
             }
 
             if outcome == nil {
-                FlowLayout(spacing: 6) {
-                    ForEach(letters.indices, id: \.self) { i in
-                        TileButton(
-                            letter: String(letters[i]),
-                            size: size,
-                            fill: .coralSoft,
-                            disabled: picked.contains(i) || shaking,
-                        ) {
-                            pick(i)
-                        }
+                TileRow(count: letters.count) { i, size in
+                    TileButton(
+                        letter: String(letters[i]),
+                        size: size,
+                        fill: .coralSoft,
+                        disabled: picked.contains(i) || shaking,
+                    ) {
+                        pick(i)
                     }
                 }
 

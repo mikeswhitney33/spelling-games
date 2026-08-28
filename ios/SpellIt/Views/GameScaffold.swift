@@ -185,18 +185,80 @@ struct FeedbackPanel: View {
     }
 }
 
-/// A word rendered as a wrapping row of tiles.
+// MARK: - Fitting a word onto one line
+
+/// Fixed tile sizes wrap a word wherever the row happens to run out of room,
+/// which leaves orphan letters on the next line and is hard to read. These
+/// candidates are offered to `ViewThatFits` largest first: shrink the tiles to
+/// keep the whole word on one line, and only once they would be too small for a
+/// young reader split into even rows, so "pronunciation" reads as 7 + 6 rather
+/// than 9 + 4.
+enum TileLadder {
+    /// Full-size tile, matching `.md`, down to the smallest a child can still
+    /// read comfortably.
+    static let sides: [CGFloat] = [48, 40, 34, 28]
+    /// Last resort, when even three rows of the smallest readable tile overflow.
+    static let hardMinSide: CGFloat = 22
+
+    /// Gaps tighten alongside the tiles so narrow screens buy back some room.
+    static func spacing(for side: CGFloat) -> CGFloat { side < 36 ? 4 : 6 }
+
+    /// Even rows: 13 tiles over 2 rows is 7 + 6, never 7 + 6 reordered.
+    static func rows(count: Int, over rowCount: Int) -> [Range<Int>] {
+        guard count > 0, rowCount > 0 else { return [] }
+        let perRow = Int((Double(count) / Double(rowCount)).rounded(.up))
+        return stride(from: 0, to: count, by: perRow).map {
+            $0..<min($0 + perRow, count)
+        }
+    }
+}
+
+/// A run of tiles sized to fit the width it is given, split into even rows only
+/// when the tiles would otherwise be too small to read.
+struct TileRow<Tile: View>: View {
+    var count: Int
+    @ViewBuilder var tile: (Int, TileSize) -> Tile
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            candidate(rows: 1, side: TileLadder.sides[0])
+            candidate(rows: 1, side: TileLadder.sides[1])
+            candidate(rows: 1, side: TileLadder.sides[2])
+            candidate(rows: 1, side: TileLadder.sides[3])
+            candidate(rows: 2, side: TileLadder.sides[0])
+            candidate(rows: 2, side: TileLadder.sides[1])
+            candidate(rows: 2, side: TileLadder.sides[2])
+            candidate(rows: 2, side: TileLadder.sides[3])
+            candidate(rows: 3, side: TileLadder.sides[2])
+            candidate(rows: 3, side: TileLadder.hardMinSide)
+        }
+    }
+
+    @ViewBuilder
+    private func candidate(rows rowCount: Int, side: CGFloat) -> some View {
+        let spacing = TileLadder.spacing(for: side)
+        let size = TileSize(side: side)
+        VStack(spacing: spacing) {
+            ForEach(TileLadder.rows(count: count, over: rowCount), id: \.lowerBound) { range in
+                HStack(spacing: spacing) {
+                    ForEach(range, id: \.self) { index in
+                        tile(index, size)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// A word rendered as a row of tiles that fits the space it is given.
 struct WordTilesView: View {
     var word: String
     var fill: Color = .white
-    var size: TileSize?
 
     var body: some View {
-        let tileSize = size ?? TileSize.forWord(word)
-        FlowLayout(spacing: 6) {
-            ForEach(Array(word.enumerated()), id: \.offset) { _, letter in
-                TileView(letter: String(letter), size: tileSize, fill: fill)
-            }
+        let letters = Array(word)
+        TileRow(count: letters.count) { index, size in
+            TileView(letter: String(letters[index]), size: size, fill: fill)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(word.map(String.init).joined(separator: " "))

@@ -48,6 +48,7 @@ import com.skdaddle.spellit.ui.Palette
 import com.skdaddle.spellit.ui.ShakeContainer
 import com.skdaddle.spellit.ui.Tile
 import com.skdaddle.spellit.ui.TileButton
+import com.skdaddle.spellit.ui.TileRow
 import com.skdaddle.spellit.ui.TileSize
 
 @Composable
@@ -158,7 +159,6 @@ private fun BalloonWordChallenge(
     var outcome by remember { mutableStateOf<Boolean?>(null) }
     var shakeTrigger by remember { mutableIntStateOf(0) }
 
-    val tileSize = TileSize.forWord(entry.word)
     val balloonsLeft = MAX_MISSES - misses
     // Guesses are lowercase a–z; compare against the lowercased word so
     // capitalized entries like "February" stay winnable.
@@ -208,25 +208,21 @@ private fun BalloonWordChallenge(
         }
 
         ShakeContainer(trigger = shakeTrigger) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                for (letter in word) {
-                    val revealed = letter in guessed || outcome != null
-                    val wasGuessed = letter in guessed
-                    Tile(
-                        letter = if (revealed) letter.toString() else "",
-                        size = tileSize,
-                        fill = when {
-                            outcome == true -> Palette.LeafSoft
-                            revealed && wasGuessed -> Palette.GrapeSoft
-                            revealed -> Palette.CoralSoft
-                            else -> Palette.GrapeSoft.copy(alpha = 0.5f)
-                        },
-                        dashed = !revealed,
-                    )
-                }
+            TileRow(count = word.length) { index, size ->
+                val letter = word[index]
+                val revealed = letter in guessed || outcome != null
+                val wasGuessed = letter in guessed
+                Tile(
+                    letter = if (revealed) letter.toString() else "",
+                    size = size,
+                    fill = when {
+                        outcome == true -> Palette.LeafSoft
+                        revealed && wasGuessed -> Palette.GrapeSoft
+                        revealed -> Palette.CoralSoft
+                        else -> Palette.GrapeSoft.copy(alpha = 0.5f)
+                    },
+                    dashed = !revealed,
+                )
             }
         }
 
