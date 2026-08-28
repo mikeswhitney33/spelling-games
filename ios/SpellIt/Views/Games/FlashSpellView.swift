@@ -62,8 +62,6 @@ struct FlashWordView: View {
     @State private var showTask: Task<Void, Never>?
     @FocusState private var inputFocused: Bool
 
-    private var size: TileSize { TileSize.forWord(entry.word) }
-
     var body: some View {
         VStack(spacing: 14) {
             if let hint = entry.hint {
@@ -74,7 +72,7 @@ struct FlashWordView: View {
             }
 
             if phase == .show {
-                WordTilesView(word: entry.word, fill: .coralSoft, size: size)
+                WordTilesView(word: entry.word, fill: .coralSoft)
                 Text(retrying ? "One more look — you've got this!" : "Look closely… it's about to hide!")
                     .font(.heading(14, weight: .medium))
                     .foregroundStyle(Color.mutedInk)
@@ -87,10 +85,8 @@ struct FlashWordView: View {
             }
 
             if phase == .type, outcome == nil {
-                FlowLayout(spacing: 6) {
-                    ForEach(0..<entry.word.count, id: \.self) { _ in
-                        TileView(letter: "", size: size, dashed: true)
-                    }
+                TileRow(count: entry.word.count) { _, size in
+                    TileView(letter: "", size: size, dashed: true)
                 }
 
                 SpellingField(

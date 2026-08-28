@@ -67,6 +67,7 @@ import com.skdaddle.spellit.ui.ShakeContainer
 import com.skdaddle.spellit.ui.SpellingField
 import com.skdaddle.spellit.ui.Tile
 import com.skdaddle.spellit.ui.TileButton
+import com.skdaddle.spellit.ui.TileRow
 import com.skdaddle.spellit.ui.TileSize
 import com.skdaddle.spellit.ui.WordTiles
 import com.skdaddle.spellit.ui.headingStyle
@@ -264,7 +265,6 @@ private fun DailyScrambleChallenge(
     var retrying by remember { mutableStateOf(false) }
     var shaking by remember { mutableStateOf(false) }
     var shakeTrigger by remember { mutableIntStateOf(0) }
-    val tileSize = TileSize.forWord(entry.word)
 
     fun pick(index: Int) {
         if (outcome != null || picked.contains(index)) return
@@ -311,24 +311,19 @@ private fun DailyScrambleChallenge(
 
         // Answer slots
         ShakeContainer(trigger = shakeTrigger) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                for (i in letters.indices) {
-                    if (i < picked.size) {
-                        TileButton(
-                            letter = letters[picked[i]].toString(),
-                            size = tileSize,
-                            fill = when {
-                                outcome == true -> Palette.LeafSoft
-                                shaking -> Palette.CoralSoft
-                                else -> Color.White
-                            },
-                        ) { unpick(i) }
-                    } else {
-                        Tile(letter = "", size = tileSize, dashed = true)
-                    }
+            TileRow(count = letters.size) { i, size ->
+                if (i < picked.size) {
+                    TileButton(
+                        letter = letters[picked[i]].toString(),
+                        size = size,
+                        fill = when {
+                            outcome == true -> Palette.LeafSoft
+                            shaking -> Palette.CoralSoft
+                            else -> Color.White
+                        },
+                    ) { unpick(i) }
+                } else {
+                    Tile(letter = "", size = size, dashed = true)
                 }
             }
         }
@@ -342,18 +337,13 @@ private fun DailyScrambleChallenge(
         }
 
         if (outcome == null) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                for (i in letters.indices) {
-                    TileButton(
-                        letter = letters[i].toString(),
-                        size = tileSize,
-                        fill = Palette.CoralSoft,
-                        enabled = !(picked.contains(i) || shaking),
-                    ) { pick(i) }
-                }
+            TileRow(count = letters.size) { i, size ->
+                TileButton(
+                    letter = letters[i].toString(),
+                    size = size,
+                    fill = Palette.CoralSoft,
+                    enabled = !(picked.contains(i) || shaking),
+                ) { pick(i) }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -404,7 +394,6 @@ private fun DailyMissingLettersChallenge(
     var retrying by remember { mutableStateOf(false) }
     var shaking by remember { mutableStateOf(false) }
     var shakeTrigger by remember { mutableIntStateOf(0) }
-    val tileSize = TileSize.forWord(entry.word)
 
     fun pickFromBank(bankIndex: Int) {
         if (outcome != null || shaking || placed.contains(bankIndex)) return
@@ -453,34 +442,29 @@ private fun DailyMissingLettersChallenge(
         }
 
         ShakeContainer(trigger = shakeTrigger) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                for (pos in chars.indices) {
-                    val blankIndex = positions.indexOf(pos)
-                    if (blankIndex >= 0) {
-                        val bankIndex = placed.getOrNull(blankIndex)
-                        if (bankIndex != null) {
-                            TileButton(
-                                letter = bank[bankIndex].toString(),
-                                size = tileSize,
-                                fill = when {
-                                    outcome == true -> Palette.LeafSoft
-                                    shaking -> Palette.CoralSoft
-                                    else -> Palette.SunSoft
-                                },
-                            ) { clearBlank(blankIndex) }
-                        } else {
-                            Tile(letter = "", size = tileSize, fill = Palette.SunSoft, dashed = true)
-                        }
+            TileRow(count = chars.size) { pos, size ->
+                val blankIndex = positions.indexOf(pos)
+                if (blankIndex >= 0) {
+                    val bankIndex = placed.getOrNull(blankIndex)
+                    if (bankIndex != null) {
+                        TileButton(
+                            letter = bank[bankIndex].toString(),
+                            size = size,
+                            fill = when {
+                                outcome == true -> Palette.LeafSoft
+                                shaking -> Palette.CoralSoft
+                                else -> Palette.SunSoft
+                            },
+                        ) { clearBlank(blankIndex) }
                     } else {
-                        Tile(
-                            letter = chars[pos].toString(),
-                            size = tileSize,
-                            fill = Palette.SecondaryBg,
-                        )
+                        Tile(letter = "", size = size, fill = Palette.SunSoft, dashed = true)
                     }
+                } else {
+                    Tile(
+                        letter = chars[pos].toString(),
+                        size = size,
+                        fill = Palette.SecondaryBg,
+                    )
                 }
             }
         }
@@ -681,7 +665,6 @@ private fun DailyFlashChallenge(
     var retrying by remember { mutableStateOf(false) }
     var hideDelayMs by remember { mutableLongStateOf(showMs) }
     var flashPass by remember { mutableIntStateOf(0) }
-    val tileSize = TileSize.forWord(entry.word)
 
     LaunchedEffect(flashPass) {
         delay(hideDelayMs)
@@ -723,7 +706,7 @@ private fun DailyFlashChallenge(
         }
 
         if (showing) {
-            WordTiles(word = entry.word, fill = Palette.CoralSoft, size = tileSize)
+            WordTiles(word = entry.word, fill = Palette.CoralSoft)
             Text(
                 if (retrying) "One more look — you've got this!" else "Look closely… it's about to hide!",
                 style = headingStyle(14, FontWeight.Medium),
@@ -735,13 +718,8 @@ private fun DailyFlashChallenge(
         }
 
         if (!showing && outcome == null) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                repeat(entry.word.length) {
-                    Tile(letter = "", size = tileSize, dashed = true)
-                }
+            TileRow(count = entry.word.length) { _, size ->
+                Tile(letter = "", size = size, dashed = true)
             }
 
             SpellingField(

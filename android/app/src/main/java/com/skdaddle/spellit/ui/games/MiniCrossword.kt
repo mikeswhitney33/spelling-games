@@ -260,7 +260,7 @@ fun MiniCrosswordScreen(store: BankStore, onManageLists: () -> Unit) {
         picker = { BankPicker(store, onManageLists) },
     ) {
         if (pool.size < 5) {
-            NotEnoughWords(5, "words with hints (3–9 letters)", onManageLists)
+            NotEnoughWords(5, "words with hints", onManageLists)
         } else {
             val p = puzzle
             if (p != null) {

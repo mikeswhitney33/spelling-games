@@ -5,7 +5,7 @@ import { Puzzle, Volume2 } from "lucide-react";
 
 import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
-import { Tile, TileButton, tileSizeForWord } from "@/components/tile";
+import { Tile, TileButton, TileRow } from "@/components/tile";
 import { Button } from "@/components/ui/button";
 import { useWordBank } from "@/hooks/use-bank";
 import { useGameRound } from "@/hooks/use-spelling-round";
@@ -72,7 +72,6 @@ export function MissingLettersWord({
   onJudged: (correct: boolean) => void;
   onNext: () => void;
 }) {
-  const size = tileSizeForWord(entry.word);
   const setup = useMemo(() => {
     const positions = pickBlankPositions(entry.word, blanks);
     const needed = positions.map((p) => entry.word[p]);
@@ -139,17 +138,12 @@ export function MissingLettersWord({
       )}
 
       {/* The word with gaps */}
-      <div
-        className={cn(
-          "mt-5 flex flex-wrap justify-center gap-1.5",
-          shaking && "shake",
-        )}
-      >
+      <TileRow className={cn("mt-5", shaking && "shake")}>
         {entry.word.split("").map((letter, pos) => {
           const blankIndex = setup.positions.indexOf(pos);
           if (blankIndex === -1) {
             return (
-              <Tile key={pos} size={size} className="bg-secondary">
+              <Tile key={pos} className="bg-secondary">
                 {letter}
               </Tile>
             );
@@ -158,13 +152,11 @@ export function MissingLettersWord({
           return bankIndex === null ? (
             <Tile
               key={pos}
-              size={size}
               className="border-dashed border-sun bg-sun-soft/50 shadow-none"
             />
           ) : (
             <TileButton
               key={pos}
-              size={size}
               className={cn(
                 "wobble-in bg-sun-soft",
                 outcome === true && "bg-leaf-soft",
@@ -177,7 +169,7 @@ export function MissingLettersWord({
             </TileButton>
           );
         })}
-      </div>
+      </TileRow>
 
       {retrying && outcome === null && (
         <p className="font-heading mt-3 text-sm font-medium text-coral" role="status">

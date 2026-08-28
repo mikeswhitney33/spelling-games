@@ -25,12 +25,16 @@ interface MemoryCard {
 /**
  * Efficiency-based score: fewer tries, more stars — but finishing the board
  * always earns at least one star.
+ *
+ * Even a player who never forgets a card needs roughly 1.5 tries per pair to
+ * clear the board, so the three-star window starts from there rather than from
+ * a perfect run; the old thresholds sat below optimal play and handed out one
+ * or two stars almost every game.
  */
 function scoreForAttempts(attempts: number, total: number): number {
-  if (attempts <= total + 2) return total; // 3 stars
-  if (attempts <= total + 6) return Math.ceil(total * 0.75); // 2 stars
-  if (attempts <= total + 11) return Math.ceil(total * 0.6); // 1 star
-  return Math.ceil(total * 0.5); // still 1 star
+  if (attempts <= Math.round(total * 2.4)) return total; // 3 stars
+  if (attempts <= Math.round(total * 3.4)) return Math.ceil(total * 0.75); // 2 stars
+  return Math.ceil(total * 0.6); // 1 star
 }
 
 export function MemoryMatchGame() {

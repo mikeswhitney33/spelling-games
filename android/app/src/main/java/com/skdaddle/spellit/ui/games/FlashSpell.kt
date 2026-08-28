@@ -2,8 +2,6 @@ package com.skdaddle.spellit.ui.games
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
@@ -35,6 +33,7 @@ import com.skdaddle.spellit.ui.NotEnoughWords
 import com.skdaddle.spellit.ui.Palette
 import com.skdaddle.spellit.ui.SpellingField
 import com.skdaddle.spellit.ui.Tile
+import com.skdaddle.spellit.ui.TileRow
 import com.skdaddle.spellit.ui.TileSize
 import com.skdaddle.spellit.ui.WordTiles
 import com.skdaddle.spellit.ui.headingStyle
@@ -78,7 +77,6 @@ fun FlashSpellScreen(store: BankStore, onManageLists: () -> Unit) {
 
 private enum class FlashPhase { SHOW, TYPE }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FlashWord(
     entry: WordEntry,
@@ -92,7 +90,6 @@ fun FlashWord(
     var typed by remember { mutableStateOf("") }
     var outcome by remember { mutableStateOf<Boolean?>(null) }
     var retrying by remember { mutableStateOf(false) }
-    val size = TileSize.forWord(entry.word)
 
     // Mirrors the iOS scheduleHide: the fresh look on a retry lasts 2 seconds.
     LaunchedEffect(retrying) {
@@ -132,7 +129,7 @@ fun FlashWord(
         }
 
         if (phase == FlashPhase.SHOW) {
-            WordTiles(word = entry.word, fill = Palette.CoralSoft, size = size)
+            WordTiles(word = entry.word, fill = Palette.CoralSoft)
             Text(
                 if (retrying) "One more look — you've got this!" else "Look closely… it's about to hide!",
                 style = headingStyle(14, FontWeight.Medium),
@@ -144,13 +141,8 @@ fun FlashWord(
         }
 
         if (phase == FlashPhase.TYPE && outcome == null) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                repeat(entry.word.length) {
-                    Tile(letter = "", size = size, dashed = true)
-                }
+            TileRow(count = entry.word.length) { _, size ->
+                Tile(letter = "", size = size, dashed = true)
             }
 
             SpellingField(

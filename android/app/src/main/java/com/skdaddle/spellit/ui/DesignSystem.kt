@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.PI
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 // Crayon palette (sRGB approximations of the site's oklch tokens)
@@ -67,16 +68,20 @@ fun headingStyle(size: Int, weight: FontWeight = FontWeight.SemiBold): TextStyle
 
 // Letter tile, the signature element
 
-enum class TileSize(val side: Dp, val fontSize: Int) {
-    XS(32.dp, 15),
-    SM(40.dp, 19),
-    MD(48.dp, 24),
-    LG(56.dp, 30);
-
+data class TileSize(val side: Dp, val fontSize: Int) {
     companion object {
-        fun forWord(word: String): TileSize = when {
-            word.length > 10 -> XS
-            word.length > 7 -> SM
+        val XS = TileSize(32.dp, 15)
+        val SM = TileSize(40.dp, 19)
+        val MD = TileSize(48.dp, 24)
+        val LG = TileSize(56.dp, 30)
+
+        /** A tile of an arbitrary edge length, with the letter scaled to match. */
+        fun of(side: Dp): TileSize = TileSize(side, (side.value * 0.5f).roundToInt())
+
+        /** Static fallback for the frame before a row has been measured. */
+        fun forCount(count: Int): TileSize = when {
+            count > 10 -> XS
+            count > 7 -> SM
             else -> MD
         }
     }

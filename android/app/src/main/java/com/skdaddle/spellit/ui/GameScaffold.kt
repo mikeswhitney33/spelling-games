@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -28,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,8 +38,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
+import kotlin.math.ceil
 import com.skdaddle.spellit.engine.RoundEngine
 import com.skdaddle.spellit.model.WordEntry
 
@@ -252,24 +257,98 @@ fun FeedbackPanel(
     }
 }
 
-/** A word rendered as a wrapping row of tiles. */
-@OptIn(ExperimentalLayoutApi::class)
+// Fitting a word onto one line
+
+/** How a run of tiles should sit inside a measured width. */
+data class TileFit(val size: TileSize, val spacing: Dp, val perRow: Int)
+
+/**
+ * Fixed tile sizes wrap a word wherever the row happens to run out of room,
+ * which leaves orphan letters on the next line and is hard to read. A fit
+ * shrinks the tiles so the whole word stays on one line, and only splits — into
+ * even rows — once that would push the letters below a legible size, so
+ * "pronunciation" reads as 7 + 6 rather than 9 + 4.
+ */
+object TileLadder {
+    /** Full-size tile; matches [TileSize.MD]. */
+    private val MaxSide = 48.dp
+    /** Smallest tile a young reader can still read comfortably. */
+    private val FloorSide = 28.dp
+    /** Only reached when even three rows will not fit. */
+    private val HardMinSide = 18.dp
+    /** Gaps tighten alongside the tiles so narrow screens buy back some room. */
+    private val RoomySpacing = 6.dp
+    private val TightSpacing = 4.dp
+    /** Past this, splitting the word does more harm than shrinking it. */
+    private const val MaxRows = 3
+
+    /**
+     * Lays [count] tiles into [width], reserving [extra] for anything else
+     * sharing the line (the "+" and "=" in Ending Machine).
+     */
+    fun fit(count: Int, width: Dp, extra: Dp = 0.dp): TileFit {
+        if (count <= 0) return TileFit(TileSize.MD, RoomySpacing, 1)
+        // Before the row is measured, fall back to the static heuristic.
+        if (!width.isSpecified || !width.value.isFinite() || width <= 0.dp) {
+            return TileFit(TileSize.forCount(count), RoomySpacing, count)
+        }
+        for (rows in 1..MaxRows) {
+            val perRow = ceil(count.toDouble() / rows).toInt()
+            val (side, spacing) = sideFor(perRow, width, extra)
+            if (side >= FloorSide || rows == MaxRows) {
+                return TileFit(TileSize.of(maxOf(HardMinSide, side)), spacing, perRow)
+            }
+        }
+        return TileFit(TileSize.forCount(count), RoomySpacing, count)
+    }
+
+    private fun sideFor(perRow: Int, width: Dp, extra: Dp): Pair<Dp, Dp> {
+        val roomy = (width - extra - RoomySpacing * (perRow - 1)) / perRow
+        if (roomy >= 36.dp) return minOf(MaxSide, roomy) to RoomySpacing
+        val tight = (width - extra - TightSpacing * (perRow - 1)) / perRow
+        return minOf(MaxSide, tight) to TightSpacing
+    }
+}
+
+/**
+ * A run of tiles sized to fit the width it is given, split into even rows only
+ * when the tiles would otherwise be too small to read.
+ */
+@Composable
+fun TileRow(
+    count: Int,
+    modifier: Modifier = Modifier,
+    tile: @Composable (index: Int, size: TileSize) -> Unit,
+) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val fit = TileLadder.fit(count, maxWidth)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(fit.spacing),
+        ) {
+            for (start in 0 until count step fit.perRow) {
+                key(start) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(fit.spacing)) {
+                        for (index in start until minOf(start + fit.perRow, count)) {
+                            key(index) { tile(index, fit.size) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** A word rendered as a row of tiles that fits the space it is given. */
 @Composable
 fun WordTiles(
     word: String,
     modifier: Modifier = Modifier,
     fill: Color = Color.White,
-    size: TileSize? = null,
 ) {
-    val tileSize = size ?: TileSize.forWord(word)
-    FlowRow(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        for (letter in word) {
-            Tile(letter = letter.toString(), size = tileSize, fill = fill)
-        }
+    TileRow(count = word.length, modifier = modifier) { index, size ->
+        Tile(letter = word[index].toString(), size = size, fill = fill)
     }
 }
 

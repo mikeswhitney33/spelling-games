@@ -5,7 +5,7 @@ import { PartyPopper, Volume2 } from "lucide-react";
 
 import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
-import { Tile, TileButton, tileSizeForWord } from "@/components/tile";
+import { Tile, TileButton, TileRow } from "@/components/tile";
 import { Button } from "@/components/ui/button";
 import { useWordBank } from "@/hooks/use-bank";
 import { useGameRound } from "@/hooks/use-spelling-round";
@@ -121,7 +121,6 @@ function BalloonWord({
   onJudged: (correct: boolean) => void;
   onNext: () => void;
 }) {
-  const size = tileSizeForWord(entry.word);
   // Guesses are lowercase a–z; compare against the lowercased word so
   // capitalized entries like "February" stay winnable.
   const word = entry.word.toLowerCase();
@@ -186,11 +185,8 @@ function BalloonWord({
       </div>
 
       {/* Hidden word */}
-      <div
-        className={cn(
-          "mt-4 flex flex-wrap justify-center gap-1.5",
-          lastMiss && outcome === null && "shake",
-        )}
+      <TileRow
+        className={cn("mt-4", lastMiss && outcome === null && "shake")}
       >
         {entry.word.split("").map((letter, i) => {
           const wasGuessed = guessed.has(letter.toLowerCase());
@@ -198,7 +194,6 @@ function BalloonWord({
           return (
             <Tile
               key={i}
-              size={size}
               className={cn(
                 !revealed && "border-dashed border-grape bg-grape-soft/50 shadow-none",
                 revealed && wasGuessed && "bg-grape-soft wobble-in",
@@ -210,7 +205,7 @@ function BalloonWord({
             </Tile>
           );
         })}
-      </div>
+      </TileRow>
 
       {/* Letter keyboard */}
       {outcome === null && (

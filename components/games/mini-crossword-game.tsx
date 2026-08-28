@@ -242,8 +242,11 @@ export function MiniCrosswordGame() {
         ? "h-8 w-8 text-base"
         : "h-10 w-10 text-xl";
 
-  const selectedCells = puzzle
-    ? new Set(placementCells(puzzle.placements[selected]))
+  // A pool with nothing usable lays out an empty grid, so there is no
+  // placement to highlight — the "not enough words" notice shows instead.
+  const selectedPlacement = puzzle?.placements[selected];
+  const selectedCells = selectedPlacement
+    ? new Set(placementCells(selectedPlacement))
     : new Set<string>();
   const shakeCells =
     puzzle && shakeIndex !== null && puzzle.placements[shakeIndex]
@@ -274,7 +277,7 @@ export function MiniCrosswordGame() {
       picker={<BankPicker bank={bank} banks={banks} onChange={setActive} />}
       notice={
         pool.length < 5 ? (
-          <NotEnoughWords need={5} requirement="words with hints (3–9 letters)" />
+          <NotEnoughWords need={5} requirement="words with hints" />
         ) : undefined
       }
       round={round}
