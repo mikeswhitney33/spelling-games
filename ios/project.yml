@@ -15,7 +15,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.skdaddle.spellit
         DEVELOPMENT_TEAM: N888N8Y6N6
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        CURRENT_PROJECT_VERSION: "2"
         GENERATE_INFOPLIST_FILE: true
         INFOPLIST_KEY_CFBundleDisplayName: "Spell It!"
         INFOPLIST_KEY_UILaunchScreen_Generation: true

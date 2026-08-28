@@ -17,6 +17,7 @@
 		54EF85FB03C279EB341886F8 /* SeededRandom.swift in Sources */ = {isa = PBXBuildFile; fileRef = E05ADFFCAD46969D621F35EA /* SeededRandom.swift */; };
 		6037283722BF56A9FDBBA56F /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97ADA9FA1AA74C83DF863D9E /* HomeView.swift */; };
 		6261052169568B04E86DFED6 /* GameScaffold.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7583D6AE9E7193ACB08582E /* GameScaffold.swift */; };
+		685547F17B37A346E2CB8B0B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3B7C644949AF8C4353F53FC1 /* PrivacyInfo.xcprivacy */; };
 		6A06143B0812153E90712F7D /* WordScrambleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2712D35A9A9B1A8EE39A6C48 /* WordScrambleView.swift */; };
 		6FDDA8E74CAE6D6A707CF847 /* RoundEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D62ADD40DB4FAB20858376E3 /* RoundEngine.swift */; };
 		71957D6E2D198A1ADEA3389D /* BankPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9E1CA1932E9CB12294BE58 /* BankPickerView.swift */; };
@@ -45,6 +46,7 @@
 		2C4B008D119A75861BFCCDC4 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
 		38568CA273F8EA3D30290192 /* SpellIt.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SpellIt.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B5CB2E394C8F2449FB011A7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		3B7C644949AF8C4353F53FC1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		48ECB25EC30712EA6D68675C /* MiniCrosswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniCrosswordView.swift; sourceTree = "<group>"; };
 		579365AB61CD0FB139AA5269 /* ListenSpellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenSpellView.swift; sourceTree = "<group>"; };
 		5A9E1CA1932E9CB12294BE58 /* BankPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BankPickerView.swift; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 				095345C544894A3BE37679A4 /* Assets.xcassets */,
 				6373BE6F308575B3E637CF9B /* DesignSystem.swift */,
 				9278D536FC894D3AC9279177 /* Models.swift */,
+				3B7C644949AF8C4353F53FC1 /* PrivacyInfo.xcprivacy */,
 				BECD6C050CF8A067AC982129 /* SpellItApp.swift */,
 				DA0C6DF8C324423675E19C62 /* Engine */,
 				F07DDED9656396D87832B8C8 /* Generated */,
@@ -217,6 +220,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				93F70470AEEFF318C1AB9A0B /* Assets.xcassets in Resources */,
+				685547F17B37A346E2CB8B0B /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -267,7 +271,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = N888N8Y6N6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Spell It!";
@@ -411,7 +415,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = N888N8Y6N6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Spell It!";
