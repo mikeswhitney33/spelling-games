@@ -6,7 +6,7 @@ import { Eye, Volume2 } from "lucide-react";
 import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
 import { SpellingInput } from "@/components/spelling-input";
-import { Tile, tileSizeForWord } from "@/components/tile";
+import { Tile, TileRow } from "@/components/tile";
 import { Button } from "@/components/ui/button";
 import { useWordBank } from "@/hooks/use-bank";
 import { useSpeechSupported } from "@/hooks/use-speech-supported";
@@ -65,7 +65,6 @@ export function FlashWord({
   onJudged: (correct: boolean) => void;
   onNext: () => void;
 }) {
-  const size = tileSizeForWord(entry.word);
   const [phase, setPhase] = useState<"show" | "type">("show");
   const [typed, setTyped] = useState("");
   const [outcome, setOutcome] = useState<boolean | null>(null);
@@ -114,13 +113,13 @@ export function FlashWord({
 
       {phase === "show" && (
         <>
-          <div className="mt-5 flex flex-wrap justify-center gap-1.5">
+          <TileRow className="mt-5">
             {entry.word.split("").map((letter, i) => (
-              <Tile key={i} size={size} className="wobble-in bg-coral-soft">
+              <Tile key={i} className="wobble-in bg-coral-soft">
                 {letter}
               </Tile>
             ))}
-          </div>
+          </TileRow>
           <p
             ref={statusRef}
             tabIndex={-1}
@@ -151,15 +150,11 @@ export function FlashWord({
             submit();
           }}
         >
-          <div className="flex flex-wrap justify-center gap-1.5" aria-hidden="true">
+          <TileRow aria-hidden="true">
             {entry.word.split("").map((_, i) => (
-              <Tile
-                key={i}
-                size={size}
-                className="border-dashed opacity-30 shadow-none"
-              />
+              <Tile key={i} className="border-dashed opacity-30 shadow-none" />
             ))}
-          </div>
+          </TileRow>
           <label htmlFor="flash-input" className="sr-only">
             Type the word you saw
           </label>

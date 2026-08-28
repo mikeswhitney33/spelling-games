@@ -5,7 +5,7 @@ import { Eraser, Shuffle, Volume2 } from "lucide-react";
 
 import { BankPicker, NotEnoughWords } from "@/components/bank-picker";
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
-import { Tile, TileButton, tileSizeForWord } from "@/components/tile";
+import { Tile, TileButton, TileRow } from "@/components/tile";
 import { Button } from "@/components/ui/button";
 import { useWordBank } from "@/hooks/use-bank";
 import { useGameRound } from "@/hooks/use-spelling-round";
@@ -63,7 +63,6 @@ export function ScrambleWord({
   onJudged: (correct: boolean) => void;
   onNext: () => void;
 }) {
-  const size = tileSizeForWord(entry.word);
   const letters = useMemo(
     () => scrambleWord(entry.word).split(""),
     [entry.word],
@@ -114,18 +113,14 @@ export function ScrambleWord({
       )}
 
       {/* Answer slots */}
-      <div
-        className={cn(
-          "mt-5 flex min-h-14 flex-wrap justify-center gap-1.5",
-          shaking && "shake",
-        )}
+      <TileRow
+        className={cn("mt-5", shaking && "shake")}
         aria-label="Your answer"
       >
         {Array.from({ length: letters.length }, (_, i) =>
           i < picked.length ? (
             <TileButton
               key={i}
-              size={size}
               className={cn(
                 "wobble-in",
                 outcome === true && "bg-leaf-soft",
@@ -139,12 +134,11 @@ export function ScrambleWord({
           ) : (
             <Tile
               key={i}
-              size={size}
               className="border-dashed opacity-30 shadow-none"
             />
           ),
         )}
-      </div>
+      </TileRow>
 
       {retrying && outcome === null && (
         <p className="font-heading mt-3 text-sm font-medium text-coral" role="status">
@@ -155,11 +149,10 @@ export function ScrambleWord({
       {/* Letter bank */}
       {outcome === null && (
         <>
-          <div className="mt-6 flex flex-wrap justify-center gap-1.5">
+          <TileRow className="mt-6">
             {letters.map((letter, i) => (
               <TileButton
                 key={i}
-                size={size}
                 className="bg-coral-soft"
                 disabled={picked.includes(i) || shaking}
                 onClick={() => pickTile(i)}
@@ -168,7 +161,7 @@ export function ScrambleWord({
                 {letter}
               </TileButton>
             ))}
-          </div>
+          </TileRow>
           <div className="mt-6 flex justify-center gap-2">
             <Button
               variant="outline"

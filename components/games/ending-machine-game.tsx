@@ -6,7 +6,7 @@ import { Cog } from "lucide-react";
 import { FeedbackPanel, GameFrame } from "@/components/game-frame";
 import { GradePicker } from "@/components/grade-picker";
 import { SpellingInput } from "@/components/spelling-input";
-import { Tile, tileSizeForWord } from "@/components/tile";
+import { Tile, TileFitProvider, TileRow, useTileFit } from "@/components/tile";
 import { Button } from "@/components/ui/button";
 import { useGameRound, useGrade } from "@/hooks/use-spelling-round";
 import { ENDING_TASKS, type EndingTask } from "@/lib/endings";
@@ -14,6 +14,17 @@ import { GAMES } from "@/lib/games";
 import { cn } from "@/lib/utils";
 
 const game = GAMES.find((g) => g.slug === "ending-machine")!;
+
+/** Pixels the "+" and "=" signs and their gaps claim on the equation line. */
+const OPERATOR_ROOM = 72;
+
+function Operator({ children }: { children: string }) {
+  return (
+    <span className="font-heading block text-xl leading-none font-semibold text-muted-foreground">
+      {children}
+    </span>
+  );
+}
 
 export function EndingMachineGame() {
   const [grade, setGrade] = useGrade();
@@ -75,35 +86,56 @@ function EndingWord({
     }
   };
 
-  const size = tileSizeForWord(task.base + task.suffix);
+  const slots = task.base.length + task.suffix.length + 1;
+  // Room the two operators and the gaps around them need on a shared line.
+  const { ref, fit } = useTileFit(slots, OPERATOR_ROOM);
+  // Once the equation no longer fits across one line, stack it instead of
+  // letting the words break wherever the row runs out of room.
+  const inline = fit.perRow >= slots;
+
+  const baseTiles = task.base.split("").map((letter, i) => (
+    <Tile key={i} className="bg-secondary">
+      {letter}
+    </Tile>
+  ));
+  const suffixTiles = task.suffix.split("").map((letter, i) => (
+    <Tile key={i} className="bg-sun-soft">
+      {letter}
+    </Tile>
+  ));
 
   return (
     <div className="text-center">
       {/* The machine: base + suffix = ? */}
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <span className="flex flex-wrap justify-center gap-1">
-          {task.base.split("").map((letter, i) => (
-            <Tile key={i} size={size} className="bg-secondary">
-              {letter}
-            </Tile>
-          ))}
-        </span>
-        <span className="font-heading text-2xl font-semibold text-muted-foreground">
-          +
-        </span>
-        <span className="flex gap-1">
-          {task.suffix.split("").map((letter, i) => (
-            <Tile key={i} size={size} className="bg-sun-soft">
-              {letter}
-            </Tile>
-          ))}
-        </span>
-        <span className="font-heading text-2xl font-semibold text-muted-foreground">
-          =
-        </span>
-        <Tile size={size} className="bg-sun-soft font-semibold">
-          ?
-        </Tile>
+      <div ref={ref}>
+        {inline ? (
+          <TileFitProvider fit={fit}>
+            <div
+              className="flex items-center justify-center"
+              style={{ gap: fit.gap * 2 }}
+            >
+              <span className="flex" style={{ gap: fit.gap }}>
+                {baseTiles}
+              </span>
+              <Operator>+</Operator>
+              <span className="flex" style={{ gap: fit.gap }}>
+                {suffixTiles}
+              </span>
+              <Operator>=</Operator>
+              <Tile className="bg-sun-soft font-semibold">?</Tile>
+            </div>
+          </TileFitProvider>
+        ) : (
+          <div className="space-y-1">
+            <TileRow>{baseTiles}</TileRow>
+            <Operator>+</Operator>
+            <TileRow>{suffixTiles}</TileRow>
+            <Operator>=</Operator>
+            <TileRow>
+              <Tile className="bg-sun-soft font-semibold">?</Tile>
+            </TileRow>
+          </div>
+        )}
       </div>
 
       {outcome === null && (

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Flame, RotateCcw, Star } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Tile, tileSizeForWord } from "@/components/tile";
+import { Tile, TileRow } from "@/components/tile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -242,13 +242,13 @@ export function FeedbackPanel({
           <p className="font-heading text-lg font-semibold text-foreground">
             Almost! It&apos;s spelled:
           </p>
-          <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+          <TileRow className="mt-3">
             {word.split("").map((letter, i) => (
-              <Tile key={i} size={tileSizeForWord(word)} className="bg-card">
+              <Tile key={i} className="bg-card">
                 {letter}
               </Tile>
             ))}
-          </div>
+          </TileRow>
         </div>
       )}
       <Button size="lg" className="font-heading mt-4" onClick={onNext} autoFocus>
