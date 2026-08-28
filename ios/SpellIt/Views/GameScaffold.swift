@@ -127,6 +127,7 @@ struct RoundSummaryView: View {
                         ForEach(missed) { entry in
                             Text(entry.word)
                                 .font(.heading(14, weight: .medium))
+                                .foregroundStyle(Color.ink)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
                                 .background(RoundedRectangle(cornerRadius: 10).fill(Color.white))
